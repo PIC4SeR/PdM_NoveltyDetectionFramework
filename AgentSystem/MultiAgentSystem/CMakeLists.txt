@@ -13,9 +13,8 @@ set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 
 list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib/cmake/")
 
-set(HEADER_FILES "include/TcMathSupporter.h" "include/TcRegressor.h" "include/TcEvent.h" "include/TcMeasure.h" "include/TcMongoDriver.h" "include/TcAgentSystem.h" "include/TcAgentManager.h" "include/Agent/TcAgentStatus.h" "include/Agent/IAgent.h"  "include/Agent/TcAgent.h" "include/INotifyDriverAgentInterface.h" "include/TcNotification.h" "include/IMongoDriverAgentInterface.h" "include/Agent/ThresholdsAgent/TcThresholdsAgent.h" "include/Agent/TcOneShotAgent.h")
-set(SOURCE_FILES "source/TcMathSupporter.cpp" "source/TcEvent.cpp" "source/TcMeasure.cpp" "source/TcMongoDriver.cpp" "source/TcAgentSystem.cpp" "source/TcAgentManager.cpp" "source/Agent/TcAgentStatus.cpp" "source/Agent/IAgent.cpp"  "source/Agent/TcAgent.cpp" "source/INotifyDriverAgentInterface.cpp" "source/TcNotification.cpp" "source/IMongoDriverAgentInterface.cpp" "source/Agent/ThresholdsAgent/TcThresholdsAgent.cpp" "source/Agent/TcOneShotAgent.cpp")
-
+set(HEADER_FILES "include/Agent/ErrorDegradationTimeEstimatorAgent/TcErrorDegradationTimeEstimator.h" "include/TcMathSupporter.h" "include/TcLinearRegressor.h" "include/TcEvent.h" "include/TcMeasure.h" "include/TcMongoDriver.h" "include/TcAgentSystem.h" "include/TcAgentManager.h" "include/Agent/TcAgentStatus.h" "include/Agent/IAgent.h"  "include/Agent/TcAgent.h" "include/INotifyDriverAgentInterface.h" "include/TcNotification.h" "include/IMongoDriverAgentInterface.h" "include/Agent/ThresholdsAgent/TcThresholdsAgent.h" "include/Agent/TcOneShotAgent.h")
+set(SOURCE_FILES "source/Agent/ErrorDegradationTimeEstimatorAgent/TcErrorDegradationTimeEstimator.cpp" "source/TcMathSupporter.cpp" "source/TcLinearRegressor.cpp" "source/TcEvent.cpp" "source/TcMeasure.cpp" "source/TcMongoDriver.cpp" "source/TcAgentSystem.cpp" "source/TcAgentManager.cpp" "source/Agent/TcAgentStatus.cpp" "source/Agent/IAgent.cpp"  "source/Agent/TcAgent.cpp" "source/INotifyDriverAgentInterface.cpp" "source/TcNotification.cpp" "source/IMongoDriverAgentInterface.cpp" "source/Agent/ThresholdsAgent/TcThresholdsAgent.cpp" "source/Agent/TcOneShotAgent.cpp")
 
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)

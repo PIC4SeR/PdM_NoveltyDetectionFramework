@@ -300,36 +300,7 @@ public:
     static double fDeterminant(vector<vector<double>> pMatrix, int pDimension);
     static int fAdJoint(vector<vector<double>> pMatrix, vector<vector<double>>* pADJoint);
     static int fInverse(vector<vector<double>> pMatrix, vector<vector<double>>* pInverse);
-    
-    template<class X, class Y>
-    static int fDerivate(vector<Y> pYvalues, vector<X> pXvalues, vector<X>* pMcoefficients);
 
 };
-
-
-
-template<class X, class Y>
-int TcMathSupporter::fDerivate(vector<Y> pYvalues, vector<X> pXvalues, vector<X>* pMcoefficients) {
-
-    if (&pYvalues == nullptr || pYvalues.size() < 1) {
-        return(TcError::TcDerivate::kErr_NoYvals);
-    }
-    if (&pXvalues == nullptr || pXvalues.size() < 1) {
-        return(TcError::TcDerivate::kErr_NoXvals);
-    }
-    else if (pYvalues.size() != pXvalues.size()) {
-        return(TcError::TcDerivate::kErr_NoXYvalsRelationship);
-    }
-
-    int rNvalues = pXvalues.size();
-    vector<double> cMcoefficents(rNvalues - 1);
-
-    for (int i = 0; i < rNvalues - 1; i++) {
-        cMcoefficents[i] = (pXvalues[i + 1] - pXvalues[i]) / (pYvalues[i + 1] - pYvalues[i]);
-    }
-
-    *pMcoefficients = cMcoefficents;
-    return (TcError::TcDerivate::kValidDerivate);
-}
 
 #endif 

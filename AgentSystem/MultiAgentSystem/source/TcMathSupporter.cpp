@@ -2,7 +2,7 @@
 #include <stdexcept>
 	
 #include "../include/TcMathSupporter.h"
-#include "../include/TcRegressor.h"
+#include "../include/TcLinearRegressor.h"
 
 
 using namespace std;

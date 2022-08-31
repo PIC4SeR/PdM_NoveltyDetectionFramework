@@ -130,7 +130,7 @@ int TcThresholdsAgent::fGetData(list<float>** pMeasureValues) {
 	
 	list<float>* cMeasureValues = new list<float>();
 	list<string> cMeasureBetweenTimeValues;
-	if (this->cmMongoInterface->fGetBetweenValues(&cMeasureBetweenTimeValues, this->rmDatabaseName, this->rmCollectionName, "TimestampEpoch", to_string(rToMilliseconds), to_string(rFromMilliseconds), "rpTimestampEpoch", "Value") < 0) {
+	if (this->cmMongoInterface->fGetDataBetweenValues(&cMeasureBetweenTimeValues, this->rmDatabaseName, this->rmCollectionName, "TimestampEpoch", to_string(rToMilliseconds), to_string(rFromMilliseconds), "rpTimestampEpoch", "Value") < 0) {
 		cmMongoInterface->fDisconnectDriver();
 		return(kGetDataFails);
 	}

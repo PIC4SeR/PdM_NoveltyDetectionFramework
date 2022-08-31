@@ -3,8 +3,10 @@
 #include <thread>
 
 #include "../include/TcAgentSystem.h"
+#include "../include/TcLinearRegressor.h"
 #include "../include/Agent/TcAgent.h"
 #include "../include/Agent/ThresholdsAgent/TcThresholdsAgent.h"
+#include "../include/Agent/ErrorDegradationTimeEstimatorAgent/TcErrorDegradationTimeEstimator.h"
 
 using namespace std;
 
@@ -106,19 +108,36 @@ void TcAgentSystem::fWaitManager(thread* pManagerThread) {
 int main()
 {
 	string rMongoDBConnectionType = "mongodb";
-	string rMongoDBConnectionHost = "its1mongodb";
+	string rMongoDBConnectionHost = "localhost";
 	uint16_t rMongoDBConnectionPort = 27017;
-	string rMongoDBDatabasename = "SpeaTestDB2";
-	string rMongoDBCollectionname = "Measures";
+	string rMongoDBDatabasename = "InfoDB";
+	string rMongoDBCollectionname = "TestResult";
+
+	TcLinearRegressor<double, int> lr;
+	vector<int> labels = {1, 2, 3, 4, 5};
+	vector<double> samples = {1.00, 2.00, 3.00, 4.00, 5.00};
+	lr.fTrain(samples, labels);
+
+	int prediction=0;
+	lr.fPredict(8.00, &prediction);
+
+	fprintf(stdout, "(%s) feature %f, prediction = %d\n", __func__, 8.00, prediction);
+	fflush(stdout);
+
+
 
 	TcAgentSystem* system = new TcAgentSystem("S - 0", "System - 0");
 	system->fLoadManager("AM0", "Agent Manager", chrono::microseconds(1000000), chrono::microseconds(10000000000));
-
+/*
 	system->fLoadAgent(new TcThresholdsAgent(
 		0, 0.0, 0.0, 0.0, 0.0, 
 		rMongoDBDatabasename, rMongoDBCollectionname, rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort,
 		string("AgentID"), string("AgentName"), chrono::microseconds(5000000)));
-
+*/
+	
+	system->fLoadAgent(new TcErrorDegradationTimeEstimator(10, 1, 5000, 30, 3000, 5, chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)), rMongoDBDatabasename, rMongoDBCollectionname, rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort,
+		string("AgentID"), string("AgentName"), chrono::microseconds(1000000)));
+	
 	try{
 		thread cManagerThread;
 		system->fStartManager(&cManagerThread);

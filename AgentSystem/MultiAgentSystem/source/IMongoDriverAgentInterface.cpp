@@ -48,7 +48,7 @@ void IMongoDriverAgentInterface::fDisconnectDriver() {
 }
 
 
-int IMongoDriverAgentInterface::fGetInBackWindow(list<string> *pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pGroupattribute, string pProjectionattribute){
+int IMongoDriverAgentInterface::fGetData(list<string> *pOutput, string pDatabase, string pCollection, string pFilterattribute, string pFiltervalue, string pSortattribute, int pLimit, int pSkip, string pGroupattribute, list<string> pProjectionattributes){
     list<string> cOutputList;
 	int rResult = 0;
     
@@ -57,20 +57,30 @@ int IMongoDriverAgentInterface::fGetInBackWindow(list<string> *pOutput, string p
     string rFilterString;
 
 
+    if (pFilterattribute == "") {
+        rFilterString = "";
+    } else {
+        rFilterString = "{ \"" + pFilterattribute + "\" : " + pFiltervalue + " }";
+    }
+
     if (pSortattribute == "") {
         rSortString = "";
     } else {
         rSortString = "{ \"" + pSortattribute + "\" : 1 }";
     }
 
-
-    rFilterString = "";
-
-    if (pProjectionattribute == "") {
+    if (pProjectionattributes.size() == 0) {
         rProjectionString = "";
     }
     else {
-        rProjectionString = "{ \"_id\" : 0, \"" + pProjectionattribute + "\" : 1 }";
+        rProjectionString = "{ \"_id\" : 0, ";
+        for(string rProjectionattribute : pProjectionattributes){
+            rProjectionString = rProjectionString + "\"" + rProjectionattribute + "\" : 1";
+            if(rProjectionattribute != pProjectionattributes.back()){
+                rProjectionString = rProjectionString + ", "; 
+            }
+        }
+        rProjectionString = rProjectionString + "}";
     }
     
     
@@ -92,7 +102,7 @@ int IMongoDriverAgentInterface::fGetInBackWindow(list<string> *pOutput, string p
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
 
-int IMongoDriverAgentInterface::fGetMaxOfInBackWindow(string *pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pMaxattribute, string pGroupattribute, string pProjectionattribute){
+int IMongoDriverAgentInterface::fGetDataMaxOf(string *pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pMaxattribute, string pGroupattribute, string pProjectionattribute){
 	list<string> cOutputList;
 	int rResult = 0;
     
@@ -144,7 +154,7 @@ int IMongoDriverAgentInterface::fGetMaxOfInBackWindow(string *pOutput, string pD
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
 
-int IMongoDriverAgentInterface::fGetMinOfInBackWindow(string *pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pMinattribute, string pGroupattribute, string pProjectionattribute){
+int IMongoDriverAgentInterface::fGetDataMinOf(string *pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pMinattribute, string pGroupattribute, string pProjectionattribute){
 	list<string> cOutputList;
 	int rResult = 0;
     
@@ -198,7 +208,7 @@ int IMongoDriverAgentInterface::fGetMinOfInBackWindow(string *pOutput, string pD
 
 
 
-int IMongoDriverAgentInterface::fGetAvgOfInBackWindow(string *pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pAvgattribute,  string pGroupattribute, string pProjectionattribute){
+int IMongoDriverAgentInterface::fGetDataAvgOf(string *pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pAvgattribute,  string pGroupattribute, string pProjectionattribute){
 	list<string> cOutputList;
 	int rResult = 0;
     
@@ -249,7 +259,7 @@ int IMongoDriverAgentInterface::fGetAvgOfInBackWindow(string *pOutput, string pD
 
 
 
-int IMongoDriverAgentInterface::fGetSumOfInBackWindow(string *pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pSumattribute,  string pGroupattribute, string pProjectionattribute){
+int IMongoDriverAgentInterface::fGetDataSumOf(string *pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pSumattribute,  string pGroupattribute, string pProjectionattribute){
 	list<string> cOutputList;
 	int rResult = 0;
     
@@ -302,7 +312,7 @@ int IMongoDriverAgentInterface::fGetSumOfInBackWindow(string *pOutput, string pD
 }
 
 
-int IMongoDriverAgentInterface::fGetBetweenValues(list<string> *pOutput, string pDatabase, string pCollection, string pBetweenattribute, string pUpperbound, string pLowerbound,  string pSortattribute, string pProjectionattribute){
+int IMongoDriverAgentInterface::fGetDataBetweenValues(list<string> *pOutput, string pDatabase, string pCollection, string pBetweenattribute, string pUpperbound, string pLowerbound,  string pSortattribute, string pProjectionattribute){
     list<string> cOutputList;
 	int rResult = 0;
     
@@ -341,7 +351,7 @@ int IMongoDriverAgentInterface::fGetBetweenValues(list<string> *pOutput, string 
 }
 
 
-int IMongoDriverAgentInterface::fGetGreatherThanValue(list<string> *pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue,  string pSortattribute, string pProjectionattribute){
+int IMongoDriverAgentInterface::fGetDataGreatherThanValue(list<string> *pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue,  string pSortattribute, string pProjectionattribute){
     list<string> cOutputList;
 	int rResult = 0;
     
@@ -383,7 +393,7 @@ int IMongoDriverAgentInterface::fGetGreatherThanValue(list<string> *pOutput, str
 }
 
 
-int IMongoDriverAgentInterface::fGetLowerThanValue(list<string> *pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pSortattribute, string pProjectionattribute){
+int IMongoDriverAgentInterface::fGetDataLowerThanValue(list<string> *pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pSortattribute, string pProjectionattribute){
     list<string> cOutputList;
 	int rResult = 0;
    
@@ -423,7 +433,7 @@ int IMongoDriverAgentInterface::fGetLowerThanValue(list<string> *pOutput, string
 }
 
 
-int IMongoDriverAgentInterface::fGetAvgOfBetweenValues(string* pOutput, string pDatabase, string pCollection, string pBetweenattribute, string pUpperbound, string pLowerbound, string pAvgattribute) {
+int IMongoDriverAgentInterface::fGetDataAvgOfBetweenValues(string* pOutput, string pDatabase, string pCollection, string pBetweenattribute, string pUpperbound, string pLowerbound, string pAvgattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -466,7 +476,7 @@ int IMongoDriverAgentInterface::fGetAvgOfBetweenValues(string* pOutput, string p
 }
 
 
-int IMongoDriverAgentInterface::fGetAvgOfGreatherThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pAvgattribute) {
+int IMongoDriverAgentInterface::fGetDataAvgOfGreatherThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pAvgattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -508,7 +518,7 @@ int IMongoDriverAgentInterface::fGetAvgOfGreatherThanValue(string* pOutput, stri
 
 }
 
-int IMongoDriverAgentInterface::fGetAvgOfLowerThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pAvgattribute) {
+int IMongoDriverAgentInterface::fGetDataAvgOfLowerThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pAvgattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -550,7 +560,7 @@ int IMongoDriverAgentInterface::fGetAvgOfLowerThanValue(string* pOutput, string 
 
 }
 
-int IMongoDriverAgentInterface::fGetMaxOfBetweenValues(string* pOutput, string pDatabase, string pCollection, string pBetweenattribute, string pUpperbound, string pLowerbound, string pMaxattribute) {
+int IMongoDriverAgentInterface::fGetDataMaxOfBetweenValues(string* pOutput, string pDatabase, string pCollection, string pBetweenattribute, string pUpperbound, string pLowerbound, string pMaxattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -592,7 +602,7 @@ int IMongoDriverAgentInterface::fGetMaxOfBetweenValues(string* pOutput, string p
 
 }
 
-int IMongoDriverAgentInterface::fGetMaxOfGreatherThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pMaxattribute) {
+int IMongoDriverAgentInterface::fGetDataMaxOfGreatherThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pMaxattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -635,7 +645,7 @@ int IMongoDriverAgentInterface::fGetMaxOfGreatherThanValue(string* pOutput, stri
 }
 
 
-int IMongoDriverAgentInterface::fGetMaxOfLowerThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pMaxattribute) {
+int IMongoDriverAgentInterface::fGetDataMaxOfLowerThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pMaxattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -676,7 +686,7 @@ int IMongoDriverAgentInterface::fGetMaxOfLowerThanValue(string* pOutput, string 
 
 }
 
-int IMongoDriverAgentInterface::fGetMinOfBetweenValues(string* pOutput, string pDatabase, string pCollection, string pBetweenattribute, string pUpperbound, string pLowerbound, string pMinattribute) {
+int IMongoDriverAgentInterface::fGetDataMinOfBetweenValues(string* pOutput, string pDatabase, string pCollection, string pBetweenattribute, string pUpperbound, string pLowerbound, string pMinattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -719,7 +729,7 @@ int IMongoDriverAgentInterface::fGetMinOfBetweenValues(string* pOutput, string p
 }
 
 
-int IMongoDriverAgentInterface::fGetMinOfGreatherThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pMinattribute) {
+int IMongoDriverAgentInterface::fGetDataMinOfGreatherThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pMinattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -761,7 +771,7 @@ int IMongoDriverAgentInterface::fGetMinOfGreatherThanValue(string* pOutput, stri
 
 }
 
-int IMongoDriverAgentInterface::fGetMinOfLowerThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pMinattribute) {
+int IMongoDriverAgentInterface::fGetDataMinOfLowerThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pMinattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -803,7 +813,7 @@ int IMongoDriverAgentInterface::fGetMinOfLowerThanValue(string* pOutput, string 
 
 }
 
-int IMongoDriverAgentInterface::fGetSumOfBetweenValues(string* pOutput, string pDatabase, string pCollection, string pBetweenattribute, string pUpperbound, string pLowerbound, string pSumattribute) {
+int IMongoDriverAgentInterface::fGetDataSumOfBetweenValues(string* pOutput, string pDatabase, string pCollection, string pBetweenattribute, string pUpperbound, string pLowerbound, string pSumattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -844,7 +854,7 @@ int IMongoDriverAgentInterface::fGetSumOfBetweenValues(string* pOutput, string p
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
 
-int IMongoDriverAgentInterface::fGetSumOfGreatherThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pSumattribute) {
+int IMongoDriverAgentInterface::fGetDataSumOfGreatherThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pSumattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -864,46 +874,6 @@ int IMongoDriverAgentInterface::fGetSumOfGreatherThanValue(string* pOutput, stri
     else {
         rGroupString = "{\"_id\" : null, \"sum\" : { \"$sum\" : \"$" + pSumattribute + "\"  } }";
     }
-
-    rResult = this->cmMongoDriver->fRunQuery(&cOutputList, pDatabase, pCollection,
-                                        rFilterString,
-                                        rProjectionString,
-                                        "",
-                                        0,
-                                        0,
-                                        rGroupString
-    );
-
-    if (rResult < 0) {
-        return(IMongoDriverAgentInterface::kQueryFails);
-    }
-
-    *pOutput = (cOutputList.size() > 0 ? cOutputList.front() : string(""));
-    return(IMongoDriverAgentInterface::kGetSuccess);
-}
-
-int IMongoDriverAgentInterface::fGetSumOfLowerThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pSumattribute) {
-    list<string> cOutputList;
-    int rResult = 0;
-
-
-    string rFilterString;
-    string rFilterSubString;
-    string rProjectionString;
-    string rGroupString;
-
-
-    rFilterString = "";
-
-    rProjectionString = "{ \"_id\" : 0}";
-
-    if (pSumattribute == "") {
-        rGroupString = "";
-    }
-    else {
-        rGroupString = "{\"_id\" : null, \"sum\" : { \"$sum\" : \"$" + pSumattribute + "\"  } }";
-    }
-
 
     rResult = this->cmMongoDriver->fRunQuery(&cOutputList, pDatabase, pCollection,
                                         rFilterString,
@@ -920,10 +890,50 @@ int IMongoDriverAgentInterface::fGetSumOfLowerThanValue(string* pOutput, string 
 
     *pOutput = (cOutputList.size() > 0 ? cOutputList.front() : string(""));
     return(IMongoDriverAgentInterface::kGetSuccess);
+}
+
+int IMongoDriverAgentInterface::fGetDataSumOfLowerThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue, string pSumattribute) {
+    list<string> cOutputList;
+    int rResult = 0;
+
+
+    string rFilterString;
+    string rFilterSubString;
+    string rProjectionString;
+    string rGroupString;
+
+
+    rFilterString = "";
+
+    rProjectionString = "{ \"_id\" : 0}";
+
+    if (pSumattribute == "") {
+        rGroupString = "";
+    }
+    else {
+        rGroupString = "{\"_id\" : null, \"sum\" : { \"$sum\" : \"$" + pSumattribute + "\"  } }";
+    }
+
+
+    rResult = this->cmMongoDriver->fRunQuery(&cOutputList, pDatabase, pCollection,
+                                        rFilterString,
+                                        rProjectionString,
+                                        "",
+                                        0,
+                                        0,
+                                        rGroupString
+    );
+
+    if (rResult < 0) {
+        return(IMongoDriverAgentInterface::kQueryFails);
+    }
+
+    *pOutput = (cOutputList.size() > 0 ? cOutputList.front() : string(""));
+    return(IMongoDriverAgentInterface::kGetSuccess);
 
 }
 
-int IMongoDriverAgentInterface::fGetCountOfBetweenValues(string* pOutput, string pDatabase, string pCollection, string pBetweenattribute, string pUpperbound, string pLowerbound) {
+int IMongoDriverAgentInterface::fGetDataCountOfBetweenValues(string* pOutput, string pDatabase, string pCollection, string pBetweenattribute, string pUpperbound, string pLowerbound) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -961,7 +971,7 @@ int IMongoDriverAgentInterface::fGetCountOfBetweenValues(string* pOutput, string
 }
 
 
-int IMongoDriverAgentInterface::fGetCountOfGreatherThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue) {
+int IMongoDriverAgentInterface::fGetDataCountOfGreatherThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -998,7 +1008,7 @@ int IMongoDriverAgentInterface::fGetCountOfGreatherThanValue(string* pOutput, st
 }
 
 
-int IMongoDriverAgentInterface::fGetCountOfLowerThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue) {
+int IMongoDriverAgentInterface::fGetDataCountOfLowerThanValue(string* pOutput, string pDatabase, string pCollection, string pCompareattribute, string pComparevalue) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1036,7 +1046,7 @@ int IMongoDriverAgentInterface::fGetCountOfLowerThanValue(string* pOutput, strin
 
 
 
-int IMongoDriverAgentInterface::fGetBetweenTimePoints(list<string>* output, string database, string collection, string betweenattribute, chrono::time_point<chrono::high_resolution_clock> to, chrono::time_point<chrono::high_resolution_clock> from,  string sortattribute, string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataBetweenTimePoints(list<string>* output, string database, string collection, string betweenattribute, chrono::time_point<chrono::high_resolution_clock> to, chrono::time_point<chrono::high_resolution_clock> from,  string sortattribute, string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1091,7 +1101,7 @@ int IMongoDriverAgentInterface::fGetBetweenTimePoints(list<string>* output, stri
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
 
-int IMongoDriverAgentInterface::fGetAfterTimePoint(list<string>* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> after,  string sortattribute, string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataAfterTimePoint(list<string>* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> after,  string sortattribute, string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1145,7 +1155,7 @@ int IMongoDriverAgentInterface::fGetAfterTimePoint(list<string>* output, string 
     *output = cOutputList;
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
-int IMongoDriverAgentInterface::fGetBeforeTimePoint(list<string>* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> before,  string sortattribute, string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataBeforeTimePoint(list<string>* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> before,  string sortattribute, string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1201,7 +1211,7 @@ int IMongoDriverAgentInterface::fGetBeforeTimePoint(list<string>* output, string
 }
 
 
-int IMongoDriverAgentInterface::fGetMinBetweenTimePoints(string* output, string database, string collection, string betweenattribute, chrono::time_point<chrono::high_resolution_clock> to, chrono::time_point<chrono::high_resolution_clock> from, string minattribute,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataMinBetweenTimePoints(string* output, string database, string collection, string betweenattribute, chrono::time_point<chrono::high_resolution_clock> to, chrono::time_point<chrono::high_resolution_clock> from, string minattribute,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1260,7 +1270,7 @@ int IMongoDriverAgentInterface::fGetMinBetweenTimePoints(string* output, string 
 }
 
 
-int IMongoDriverAgentInterface::fGetMinAfterTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> after, string minattribute,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataMinAfterTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> after, string minattribute,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1315,7 +1325,7 @@ int IMongoDriverAgentInterface::fGetMinAfterTimePoint(string* output, string dat
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
 
-int IMongoDriverAgentInterface::fGetMinBeforeTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> before, string minattribute,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataMinBeforeTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> before, string minattribute,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1374,7 +1384,7 @@ int IMongoDriverAgentInterface::fGetMinBeforeTimePoint(string* output, string da
 
 
 
-int IMongoDriverAgentInterface::fGetMaxBetweenTimePoints(string* output, string database, string collection, string betweenattribute, chrono::time_point<chrono::high_resolution_clock> to, chrono::time_point<chrono::high_resolution_clock> from, string maxattribute,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataMaxBetweenTimePoints(string* output, string database, string collection, string betweenattribute, chrono::time_point<chrono::high_resolution_clock> to, chrono::time_point<chrono::high_resolution_clock> from, string maxattribute,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1429,7 +1439,7 @@ int IMongoDriverAgentInterface::fGetMaxBetweenTimePoints(string* output, string 
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
 
-int IMongoDriverAgentInterface::fGetMaxAfterTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> after, string maxattribute,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataMaxAfterTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> after, string maxattribute,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1482,7 +1492,7 @@ int IMongoDriverAgentInterface::fGetMaxAfterTimePoint(string* output, string dat
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
 
-int IMongoDriverAgentInterface::fGetMaxBeforeTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> before, string maxattribute,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataMaxBeforeTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> before, string maxattribute,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1532,7 +1542,7 @@ int IMongoDriverAgentInterface::fGetMaxBeforeTimePoint(string* output, string da
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
 
-int IMongoDriverAgentInterface::fGetSumBetweenTimePoints(string* output, string database, string collection, string betweenattribute, chrono::time_point<chrono::high_resolution_clock> to, chrono::time_point<chrono::high_resolution_clock> from, string sumattribute,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataSumBetweenTimePoints(string* output, string database, string collection, string betweenattribute, chrono::time_point<chrono::high_resolution_clock> to, chrono::time_point<chrono::high_resolution_clock> from, string sumattribute,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1586,7 +1596,7 @@ int IMongoDriverAgentInterface::fGetSumBetweenTimePoints(string* output, string 
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
 
-int IMongoDriverAgentInterface::fGetSumAfterTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> after, string sumattribute,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataSumAfterTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> after, string sumattribute,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1640,7 +1650,7 @@ int IMongoDriverAgentInterface::fGetSumAfterTimePoint(string* output, string dat
     *output = (cOutputList.size() > 0 ? cOutputList.front() : string(""));
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
-int IMongoDriverAgentInterface::fGetSumBeforeTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> before, string sumattribute,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataSumBeforeTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> before, string sumattribute,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1696,7 +1706,7 @@ int IMongoDriverAgentInterface::fGetSumBeforeTimePoint(string* output, string da
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
 
-int IMongoDriverAgentInterface::fGetAvgBetweenTimePoints(string* output, string database, string collection, string betweenattribute, chrono::time_point<chrono::high_resolution_clock> to, chrono::time_point<chrono::high_resolution_clock> from, string avgattribute,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataAvgBetweenTimePoints(string* output, string database, string collection, string betweenattribute, chrono::time_point<chrono::high_resolution_clock> to, chrono::time_point<chrono::high_resolution_clock> from, string avgattribute,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1753,7 +1763,7 @@ int IMongoDriverAgentInterface::fGetAvgBetweenTimePoints(string* output, string 
     *output = (cOutputList.size() > 0 ? cOutputList.front() : string(""));
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
-int IMongoDriverAgentInterface::fGetAvgAfterTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> after, string avgattribute,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataAvgAfterTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> after, string avgattribute,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1808,7 +1818,7 @@ int IMongoDriverAgentInterface::fGetAvgAfterTimePoint(string* output, string dat
     *output = (cOutputList.size() > 0 ? cOutputList.front() : string(""));
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
-int IMongoDriverAgentInterface::fGetAvgBeforeTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> before, string avgattribute,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataAvgBeforeTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> before, string avgattribute,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1866,7 +1876,7 @@ int IMongoDriverAgentInterface::fGetAvgBeforeTimePoint(string* output, string da
 
 
 
-int IMongoDriverAgentInterface::fGetCountBetweenTimePoints(string* output, string database, string collection, string betweenattribute, chrono::time_point<chrono::high_resolution_clock> to, chrono::time_point<chrono::high_resolution_clock> from,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataCountBetweenTimePoints(string* output, string database, string collection, string betweenattribute, chrono::time_point<chrono::high_resolution_clock> to, chrono::time_point<chrono::high_resolution_clock> from,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1916,7 +1926,7 @@ int IMongoDriverAgentInterface::fGetCountBetweenTimePoints(string* output, strin
     *output = (cOutputList.size() > 0 ? cOutputList.front() : string(""));
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
-int IMongoDriverAgentInterface::fGetCountAfterTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> after,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataCountAfterTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> after,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 
@@ -1967,7 +1977,7 @@ int IMongoDriverAgentInterface::fGetCountAfterTimePoint(string* output, string d
 }
 
 
-int IMongoDriverAgentInterface::fGetCountBeforeTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> before,  string projectionattribute) {
+int IMongoDriverAgentInterface::fGetDataCountBeforeTimePoint(string* output, string database, string collection, string compareattribute, chrono::time_point<chrono::high_resolution_clock> before,  string projectionattribute) {
     list<string> cOutputList;
     int rResult = 0;
 

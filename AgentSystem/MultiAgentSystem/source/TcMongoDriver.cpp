@@ -14,63 +14,106 @@
 #include <mongocxx/result/insert_one.hpp>
 #include <mongocxx/exception/bulk_write_exception.hpp>
 #include "../include/TcMongoDriver.h"
+#include "../include/TcColors.h"
 
 
 
 
 TcMongoDriver::TcMongoDriver(string pMongoDriverName, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort) {
+	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+
 	this->rmMongoDriverName = pMongoDriverName;
 	this->rmMongoDriverRemoteConnectionType = pMongoDriverRemoteConnectionType;
 	this->rmMongoDriverRemoteConnectionHost = pMongoDriverRemoteConnectionHost;
 	this->rmMongoDriverRemoteConnectionPort = pMongoDriverRemoteConnectionPort;
+
+	fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+	fflush(stdout);
+
 }
 
 TcMongoDriver::TcMongoDriver() {
+
+	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+
 	this->rmMongoDriverName = string(MONGO_DRIVER_NAME);
 	this->rmMongoDriverRemoteConnectionType = string(MONGO_DEFAULT_CONNTYPE);
 	this->rmMongoDriverRemoteConnectionHost = string(MONGO_DEFAULT_HOST);
 	this->rmMongoDriverRemoteConnectionPort = (uint16_t) MONGO_DEFAULT_PORT;
+
+	fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+	fflush(stdout);
 }
 
 
 
 TcMongoDriver::~TcMongoDriver()
 {
+	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+
 	if (this->cmMongoDriverConnectionPool != nullptr) {
 		delete this->cmMongoDriverConnectionPool;
 		this->cmMongoDriverConnectionPool = nullptr;
 	}
+
+	fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+	fflush(stdout);
+
+
 }
 
 void TcMongoDriver::fDisconnect(){
+	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+	
 	if (this->cmMongoDriverConnectionPool != nullptr) {
 		delete this->cmMongoDriverConnectionPool;
 		this->cmMongoDriverConnectionPool = nullptr;
 	}
+	
+	fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+	fflush(stdout);
+
 }
 
 int TcMongoDriver::fConnect() {
-
 	try {
+		
 		string cMongoDriverRemoteConnectionString = this->rmMongoDriverRemoteConnectionType + "://" + this->rmMongoDriverRemoteConnectionHost + ":" + to_string(this->rmMongoDriverRemoteConnectionPort);
+		
+		fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+		fflush(stdout);
+		
 		const mongocxx::uri& cMongoDriverConnectionUri{ bsoncxx::string::view_or_value(cMongoDriverRemoteConnectionString) };
 		this->cmMongoDriverConnectionPool = new mongocxx::pool(cMongoDriverConnectionUri);
+
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+
 		if (this->cmMongoDriverConnectionPool == nullptr) {
 			return(kErr_Connect_MemAlloc);
 		}
+
 		return(kConnect_Ok);
 	}
 	catch (mongocxx::exception e) {
-		fprintf(stdout, "[fConnect] Catched mongocxx::exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Catched mongocxx::exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, e.code().message().c_str(), e.code().value(), e.code().category().name());
 		fflush(stdout);
 		return(kErr_Connect_Operation);
 	}
 }
 int TcMongoDriver::fClientAcquire(core::v1::optional<mongocxx::pool::entry>* pOptionalMongoEntry) {
 	try {
+		
 		int rRetryMaxConnection = 10;
 		int rRetryConnection = 0;
 		
+		fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+		fflush(stdout);
+
 		while (rRetryConnection < rRetryMaxConnection) {
 			*pOptionalMongoEntry = this->cmMongoDriverConnectionPool->try_acquire();
 			if (*pOptionalMongoEntry) {
@@ -78,6 +121,10 @@ int TcMongoDriver::fClientAcquire(core::v1::optional<mongocxx::pool::entry>* pOp
 			}
 			rRetryConnection++;
 		}
+
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+
 		
 		if (rRetryConnection >= rRetryMaxConnection) {
 			return(kErr_ClientAcquire);
@@ -86,7 +133,7 @@ int TcMongoDriver::fClientAcquire(core::v1::optional<mongocxx::pool::entry>* pOp
 		}
 	}
 	catch (mongocxx::exception e) {
-		fprintf(stdout, "[fClientAcquire] Catched mongocxx::exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Catched mongocxx::exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, e.code().message().c_str(), e.code().value(), e.code().category().name());
 		fflush(stdout);
 		return(kErr_ClientAcquire);
 	}
@@ -95,30 +142,41 @@ int TcMongoDriver::fDatabaseExist(string pDatabase, mongocxx::client& pMongoClie
 	
 	try {
 
+		fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+		fflush(stdout);
+		
 		bsoncxx::document::view_or_value cDatabaseExistFilter = bsoncxx::builder::stream::document{} << "filter" << bsoncxx::builder::stream::open_document << "name" << pDatabase << bsoncxx::builder::stream::close_document << bsoncxx::builder::stream::finalize;		
 		mongocxx::cursor cMongoCursor = pMongoClient.list_databases(cDatabaseExistFilter.view());
 		
 		if (cMongoCursor.begin() == cMongoCursor.end()){
 			try {
 				pMongoClient.database(pDatabase);
+				
+				fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+				fflush(stdout);
+
 				return(kDatabaseExist_Create_Ok);
 			}
 			catch (mongocxx::operation_exception e) {
-				fprintf(stdout, "[fDatabaseExist] Catched mongocxx::operation_exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+				fprintf(stdout, ANSI_COLOR_RED "(%s) Catched mongocxx::operation_exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, e.code().message().c_str(), e.code().value(), e.code().category().name());
 				fflush(stdout);
 				return(kErr_DatabaseExist_Create);
 			}
 		} else {
+			
+			fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+			fflush(stdout);
+
 			return(kDatabaseExist_Create_Ok);
 		}
 	}
 	catch (mongocxx::query_exception qe) {
-		fprintf(stdout, "[fDatabaseExist] Catched mongocxx::query_exception - Message %s Value %d Category %s\n", qe.code().message().c_str(), qe.code().value(), qe.code().category().name());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Catched mongocxx::query_exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, qe.code().message().c_str(), qe.code().value(), qe.code().category().name());
 		fflush(stdout);
 		return(kErr_DatabaseExist);
 	}
 	catch (mongocxx::operation_exception e) {
-		fprintf(stdout, "[fDatabaseExist] Catched mongocxx::operation_exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Catched mongocxx::operation_exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, e.code().message().c_str(), e.code().value(), e.code().category().name());
 		fflush(stdout);
 		return(kErr_DatabaseExist);
 	}
@@ -127,13 +185,17 @@ int TcMongoDriver::fDatabaseExist(string pDatabase, mongocxx::client& pMongoClie
 }
 int TcMongoDriver::fCollectionExist(string pCollection, mongocxx::database pMongoDatabase) {
 	try {
+
+		fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+		fflush(stdout);
+
 		bsoncxx::string::view_or_value cCollectionName = bsoncxx::string::view_or_value(pCollection);
 		if (!pMongoDatabase.has_collection(cCollectionName)) {
 			try {
 				pMongoDatabase.create_collection(cCollectionName);
 				return(kCollectionExist_Ok);
 			} catch (mongocxx::operation_exception e) {
-				fprintf(stdout, "[fCollectionExist] Catched mongocxx::operation_exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+				fprintf(stdout, ANSI_COLOR_RED "(%s) Catched mongocxx::operation_exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, e.code().message().c_str(), e.code().value(), e.code().category().name());
 				fflush(stdout);
 				return(kErr_CollectionExist);
 			}
@@ -142,7 +204,7 @@ int TcMongoDriver::fCollectionExist(string pCollection, mongocxx::database pMong
 		}
 	}
 	catch (mongocxx::operation_exception e) {
-		fprintf(stdout, "[fCollectionExist] Catched mongocxx::operation_exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Catched mongocxx::operation_exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, e.code().message().c_str(), e.code().value(), e.code().category().name());
 		fflush(stdout);
 		return(kErr_CollectionExist);
 	}
@@ -154,9 +216,13 @@ int TcMongoDriver::fInserDocument(string pDatabase, string pCollection, string p
 	bsoncxx::document::view_or_value cBsonDocument;
 	int rResult = 0;
 
+	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+
+
 	rResult = fClientAcquire(&cOptionalMongoEntry);
 	if (rResult == kErr_ClientAcquire) {
-		fprintf(stdout, "[fInsertDocument] Client acquire fails\n");
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Client acquire fails\n", __func__);
 		fflush(stdout);
 		return(kErr_Insert_ClientAcquire);
 	}
@@ -165,11 +231,11 @@ int TcMongoDriver::fInserDocument(string pDatabase, string pCollection, string p
 	
 	rResult = fDatabaseExist(pDatabase, cMongoClient);
 	if (rResult == kErr_DatabaseExist_Create) {
-		fprintf(stdout, "[fInsertDocument] Database %s not exist, creation fails\n", pDatabase.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pDatabase.c_str());
 		fflush(stdout);
 		return(kErr_Insert_DatabaseExist);
 	} else if (rResult == kErr_DatabaseExist) {
-		fprintf(stdout, "[fInsertDocument] Database %s not exist, creation fails\n", pDatabase.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pDatabase.c_str());
 		fflush(stdout);
 		return(kErr_Insert_DatabaseExist);
 	}
@@ -177,11 +243,11 @@ int TcMongoDriver::fInserDocument(string pDatabase, string pCollection, string p
 	cMongoDatabase = cMongoClient[pDatabase];
 	rResult = fCollectionExist(pCollection, cMongoDatabase);
 	if (rResult == kErr_CollectionExist_Create) {
-		fprintf(stdout, "[fInsertDocument] Collection %s not exist, creation fails\n", pCollection.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pCollection.c_str());
 		fflush(stdout);
 		return(kErr_Insert_CollectionExist);
 	} else if (rResult == kErr_CollectionExist) {
-		fprintf(stdout, "[fInsertDocument] Collection %s not exist, creation fails\n", pCollection.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pCollection.c_str());
 		fflush(stdout);
 		return(kErr_Insert_CollectionExist);
 	}
@@ -196,17 +262,21 @@ int TcMongoDriver::fInserDocument(string pDatabase, string pCollection, string p
 	
 	try {
 		core::v1::optional<mongocxx::result::insert_one> cResult = cMongoCollection.insert_one(cBsonDocument.view());
+		
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+
 		if (!cResult) {
 			return(kErr_Insert);
 		} else {
 			return(kInsert_Ok);
 		}
 	} catch (mongocxx::bulk_write_exception e) {
-		printf("[fInsertDocument] Catched mongocxx::bulk_write_exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+		printf(ANSI_COLOR_RED "(%s) Catched mongocxx::bulk_write_exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, e.code().message().c_str(), e.code().value(), e.code().category().name());
 		fflush(stdout);
 		return(kErr_Insert);
 	} catch (mongocxx::exception e) {
-		fprintf(stdout, "[fInsertDocument] Catched mongocxx::exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Catched mongocxx::exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, e.code().message().c_str(), e.code().value(), e.code().category().name());
 		fflush(stdout);
 		return(kErr_Insert);
 	}
@@ -219,9 +289,12 @@ int TcMongoDriver::fInserDocument(string pDatabase, string pCollection, bsoncxx:
 	mongocxx::collection cMongoCollection;
 	int rResult = 0;
 
+	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+	
 	rResult = fClientAcquire(&cOptionalMongoEntry);
 	if (rResult == kErr_ClientAcquire) {
-		fprintf(stdout, "[fInsertDocument] Client acquire fails\n");
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Client acquire fails" ANSI_COLOR_RESET "\n", __func__);
 		fflush(stdout);
 		return(kErr_Insert_ClientAcquire);
 	}
@@ -230,12 +303,12 @@ int TcMongoDriver::fInserDocument(string pDatabase, string pCollection, bsoncxx:
 
 	rResult = fDatabaseExist(pDatabase, cMongoClient);
 	if (rResult == kErr_DatabaseExist_Create) {
-		fprintf(stdout, "[fInsertDocument] Database %s not exist, creation fails\n", pDatabase.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pDatabase.c_str());
 		fflush(stdout);
 		return(kErr_Insert_DatabaseExist);
 	}
 	else if (rResult == kErr_DatabaseExist) {
-		fprintf(stdout, "[fInsertDocument] Database %s not exist, creation fails\n", pDatabase.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pDatabase.c_str());
 		fflush(stdout);
 		return(kErr_Insert_DatabaseExist);
 	}
@@ -243,12 +316,12 @@ int TcMongoDriver::fInserDocument(string pDatabase, string pCollection, bsoncxx:
 	cMongoDatabase = cMongoClient[pDatabase];
 	rResult = fCollectionExist(pCollection, cMongoDatabase);
 	if (rResult == kErr_CollectionExist_Create) {
-		fprintf(stdout, "[fInsertDocument] Collection %s not exist, creation fails\n", pCollection.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pCollection.c_str());
 		fflush(stdout);
 		return(kErr_Insert_CollectionExist);
 	}
 	else if (rResult == kErr_CollectionExist) {
-		fprintf(stdout, "[fInsertDocument] Collection %s not exist, creation fails\n", pCollection.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pCollection.c_str());
 		fflush(stdout);
 		return(kErr_Insert_CollectionExist);
 	}
@@ -257,6 +330,10 @@ int TcMongoDriver::fInserDocument(string pDatabase, string pCollection, bsoncxx:
 
 	try {
 		core::v1::optional<mongocxx::result::insert_one> cResult = cMongoCollection.insert_one(pBsonDocument.view());
+		
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+
 		if (!cResult) {
 			return(kErr_Insert);
 		}
@@ -265,12 +342,12 @@ int TcMongoDriver::fInserDocument(string pDatabase, string pCollection, bsoncxx:
 		}
 	}
 	catch (mongocxx::bulk_write_exception e) {
-		printf("[fInsertDocument] Catched mongocxx::bulk_write_exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Catched mongocxx::bulk_write_exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, e.code().message().c_str(), e.code().value(), e.code().category().name());
 		fflush(stdout);
 		return(kErr_Insert);
 	}
 	catch (mongocxx::exception e) {
-		fprintf(stdout, "[fInsertDocument] Catched mongocxx::exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Catched mongocxx::exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, e.code().message().c_str(), e.code().value(), e.code().category().name());
 		fflush(stdout);
 		return(kErr_Insert);
 	}
@@ -285,9 +362,13 @@ int TcMongoDriver::fInsertDocumentList(string pDatabase, string pCollection, lis
 	list<bsoncxx::document::view_or_value> cBsonDocuments;
 	int rResult = 0;
 
+	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+
+
 	rResult = fClientAcquire(&cOptionalMongoEntry);
 	if (rResult == kErr_ClientAcquire) {
-		fprintf(stdout, "[fInsertDocumentList] Client acquire fails\n");
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Client acquire fails" ANSI_COLOR_RESET "\n", __func__);
 		fflush(stdout);
 		return(kErr_Insert_ClientAcquire);
 	}
@@ -296,11 +377,11 @@ int TcMongoDriver::fInsertDocumentList(string pDatabase, string pCollection, lis
 
 	rResult = fDatabaseExist(pDatabase, cMongoClient);
 	if (rResult == kErr_DatabaseExist_Create) {
-		fprintf(stdout, "[fInsertDocumentList] Database %s not exist, creation fails\n", pDatabase.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pDatabase.c_str());
 		fflush(stdout);
 		return(kErr_Insert_DatabaseExist);
 	} else if (rResult == kErr_DatabaseExist) {
-		fprintf(stdout, "[fInsertDocumentList] Database %s not exist, creation fails\n", pDatabase.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pDatabase.c_str());
 		fflush(stdout);
 		return(kErr_Insert_DatabaseExist);
 	}
@@ -308,11 +389,11 @@ int TcMongoDriver::fInsertDocumentList(string pDatabase, string pCollection, lis
 	cMongoDatabase = cMongoClient[pDatabase];
 	rResult = fCollectionExist(pCollection, cMongoDatabase);
 	if (rResult == kErr_CollectionExist_Create) {
-		fprintf(stdout, "[fInsertDocumentList] Collection %s not exist, creation fails\n", pCollection.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pCollection.c_str());
 		fflush(stdout);
 		return(kErr_Insert_CollectionExist);
 	} else if (rResult == kErr_CollectionExist) {
-		fprintf(stdout, "[fInsertDocumentList] Collection %s not exist, creation fails\n", pCollection.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pCollection.c_str());
 		fflush(stdout);
 		return(kErr_Insert_CollectionExist);
 	}
@@ -331,20 +412,24 @@ int TcMongoDriver::fInsertDocumentList(string pDatabase, string pCollection, lis
 
 	try {
 		core::v1::optional<mongocxx::result::insert_many> cResult = cMongoCollection.insert_many(cBsonDocuments);
+		
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+
+
 		if (!cResult) {
 			return(kErr_Insert);
-		}
-		else {
+		} else {
 			return(kInsert_Ok);
 		}
 	}
 	catch (mongocxx::bulk_write_exception e) {
-		printf("[fInsertDocumentList] Catched mongocxx::bulk_write_exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Catched mongocxx::bulk_write_exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, e.code().message().c_str(), e.code().value(), e.code().category().name());
 		fflush(stdout);
 		return(kErr_Insert);
 	}
 	catch (mongocxx::exception e) {
-		fprintf(stdout, "[fInsertDocumentList] Catched mongocxx::exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Catched mongocxx::exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, e.code().message().c_str(), e.code().value(), e.code().category().name());
 		fflush(stdout);
 		return(kErr_Insert);
 	}
@@ -364,9 +449,12 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 	list<string> cOutputList;
 	int rResult = 0;
 
+	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+
 	rResult = fClientAcquire(&cOptionalMongoEntry);
 	if (rResult == kErr_ClientAcquire) {
-		fprintf(stdout, "[fInsertDocumentList] Client acquire fails\n");
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Client acquire fails" ANSI_COLOR_RESET "\n", __func__);
 		fflush(stdout);
 		return(kErr_Insert_ClientAcquire);
 	}
@@ -375,27 +463,27 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 
 	rResult = fDatabaseExist(pDatabase, cMongoClient);
 	if (rResult == kErr_DatabaseExist_Create) {
-		fprintf(stdout, "[fInsertDocumentList] Database %s not exist, creation fails\n", pDatabase.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pDatabase.c_str());
 		fflush(stdout);
-		return(-1);
-	}
-	else if (rResult == kErr_DatabaseExist) {
-		fprintf(stdout, "[fInsertDocumentList] Database %s not exist, creation fails\n", pDatabase.c_str());
+		return(kErr_Insert_DatabaseExist);
+	} else if (rResult == kErr_DatabaseExist) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pDatabase.c_str());
 		fflush(stdout);
-		return(-1);
+		return(kErr_Insert_DatabaseExist);
 	}
 
+
 	cMongoDatabase = cMongoClient[pDatabase];
+
 	rResult = fCollectionExist(pCollection, cMongoDatabase);
 	if (rResult == kErr_CollectionExist_Create) {
-		fprintf(stdout, "[fInsertDocumentList] Collection %s not exist, creation fails\n", pCollection.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pCollection.c_str());
 		fflush(stdout);
 		return(kErr_Insert_CollectionExist);
-	}
-	else if (rResult == kErr_CollectionExist) {
-		fprintf(stdout, "[fInsertDocumentList] Collection %s not exist, creation fails\n", pCollection.c_str());
+	} else if (rResult == kErr_CollectionExist) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pCollection.c_str());
 		fflush(stdout);
-		return(-1);
+		return(kErr_Insert_CollectionExist);
 	}
 
 	cMongoCollection = cMongoDatabase[pCollection];
@@ -439,7 +527,7 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 				cDocument = bsoncxx::to_json(cBsonDocument);
 			}
 			catch (bsoncxx::exception be) {
-				fprintf(stdout, "[fRunQuery] Catched bsoncxx::exception - Message %s Value %d Category %s\n", be.code().message().c_str(), be.code().value(), be.code().category().name());
+				fprintf(stdout, ANSI_COLOR_RED "(%s) Catched bsoncxx::exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, be.code().message().c_str(), be.code().value(), be.code().category().name());
 				fflush(stdout);
 				return(-1);
 			}
@@ -447,9 +535,13 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 		}
 
 		*pOutputList = cOutputList;
+		
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		
 		return(0);
 	} catch (mongocxx::query_exception e) {
-		printf("[fRunQuery] Catched mongocxx::query_exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Catched mongocxx::query_exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, e.code().message().c_str(), e.code().value(), e.code().category().name());
 		fflush(stdout);
 		return(kErr_Insert);
 	}
@@ -468,9 +560,12 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 	list<string> cOutputList;
 	int rResult = 0;
 
+	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+
 	rResult = fClientAcquire(&cOptionalMongoEntry);
 	if (rResult == kErr_ClientAcquire) {
-		fprintf(stdout, "[fInsertDocumentList] Client acquire fails\n");
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Client acquire fails" ANSI_COLOR_RESET "\n", __func__);
 		fflush(stdout);
 		return(kErr_Insert_ClientAcquire);
 	}
@@ -479,27 +574,27 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 
 	rResult = fDatabaseExist(pDatabase, cMongoClient);
 	if (rResult == kErr_DatabaseExist_Create) {
-		fprintf(stdout, "[fInsertDocumentList] Database %s not exist, creation fails\n", pDatabase.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pDatabase.c_str());
 		fflush(stdout);
-		return(-1);
+		return(kErr_DatabaseExist_Create);
 	}
 	else if (rResult == kErr_DatabaseExist) {
-		fprintf(stdout, "[fInsertDocumentList] Database %s not exist, creation fails\n", pDatabase.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database %s not exist, creation fails\n", __func__, pDatabase.c_str());
 		fflush(stdout);
-		return(-1);
+		return(kErr_DatabaseExist);
 	}
 
 	cMongoDatabase = cMongoClient[pDatabase];
 	rResult = fCollectionExist(pCollection, cMongoDatabase);
 	if (rResult == kErr_CollectionExist_Create) {
-		fprintf(stdout, "[fInsertDocumentList] Collection %s not exist, creation fails\n", pCollection.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pCollection.c_str());
 		fflush(stdout);
 		return(kErr_Insert_CollectionExist);
 	}
 	else if (rResult == kErr_CollectionExist) {
-		fprintf(stdout, "[fInsertDocumentList] Collection %s not exist, creation fails\n", pCollection.c_str());
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection %s not exist, creation fails" ANSI_COLOR_RESET "\n", __func__, pCollection.c_str());
 		fflush(stdout);
-		return(-1);
+		return(kErr_CollectionExist);
 	}
 
 	cMongoCollection = cMongoDatabase[pCollection];
@@ -532,7 +627,7 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 			cDocument = bsoncxx::to_json(cBsonDocument);
 		}
 		catch (bsoncxx::exception be) {
-			fprintf(stdout, "[fRunQuery] Catched bsoncxx::exception - Message %s Value %d Category %s\n", be.code().message().c_str(), be.code().value(), be.code().category().name());
+			fprintf(stdout, ANSI_COLOR_RED "(%s) Catched bsoncxx::exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, be.code().message().c_str(), be.code().value(), be.code().category().name());
 			fflush(stdout);
 			return(-1);
 		}
@@ -540,6 +635,9 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 	}
 
 	*pOutputList = cOutputList;
+	
+	fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+	fflush(stdout);
 
 	return(0);
 }

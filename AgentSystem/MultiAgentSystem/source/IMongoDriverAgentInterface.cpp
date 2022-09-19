@@ -56,6 +56,9 @@ int IMongoDriverAgentInterface::fGetData(list<string> *pOutput, string pDatabase
     string rProjectionString;
     string rFilterString;
 
+    fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+
 
     if (pFilterattribute == "") {
         rFilterString = "";

@@ -7,6 +7,8 @@
 #include "../../include/Agent/TcAgent.h"
 #include "../../include/TcNotification.h"
 #include "../../include/TcMeasure.h"
+#include "../../include/TcColors.h"
+
 
 
 TcAgent::TcAgent() {

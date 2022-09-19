@@ -1,26 +1,29 @@
 #include <stdlib.h>
 #include <bsoncxx/document/element.hpp>
-#include <bsoncxx/json.hpp>
 #include <bsoncxx/types.hpp>
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/json.hpp>
+
+
+
+
 #include "../../../include/Agent/ErrorDegradationTimeEstimatorAgent/TcErrorDegradationTimeEstimator.h"
 #include "../../../include/TcLinearRegressor.h"
 
-
-
-
-
-TcErrorDegradationTimeEstimator::TcErrorDegradationTimeEstimator(int pNumSamplesRead, unsigned int pSystemFeatureToControl, double pPredictedTimeError, double pMinOperativeThresholdError, double pMaxOperativeThresholdError, int pMinNumOfRegrSamples, chrono::milliseconds pPreventionThresholdTime, string pDatabaseName, string pCollectionName, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pAgentID, string pAgentName, chrono::microseconds pStepRunTime, chrono::time_point<chrono::high_resolution_clock> pNextRunTime, Priority pPriority, bool pStopped) : TcAgent(pDatabaseName, pCollectionName, pMongoDriverRemoteConnectionType, pMongoDriverRemoteConnectionHost, pMongoDriverRemoteConnectionPort, pAgentID, pAgentName, pStepRunTime, pNextRunTime, pPriority, pStopped){
+TcErrorDegradationTimeEstimator::TcErrorDegradationTimeEstimator(int pNumSamplesRead, unsigned int pPredictor, string pPredictedErrorType, double pPredictedErrorValue, double pMinOperativeThresholdError, double pMaxOperativeThresholdError, int pMinNumOfRegrSamples, chrono::milliseconds pPreventionThresholdTime, string pDatabaseName, string pCollectionName, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pAgentID, string pAgentName, chrono::microseconds pStepRunTime, chrono::time_point<chrono::high_resolution_clock> pNextRunTime, Priority pPriority, bool pStopped) : TcAgent(pDatabaseName, pCollectionName, pMongoDriverRemoteConnectionType, pMongoDriverRemoteConnectionHost, pMongoDriverRemoteConnectionPort, pAgentID, pAgentName, pStepRunTime, pNextRunTime, pPriority, pStopped){
 	
 	this->rmNumSamplesRead = pNumSamplesRead;
-	this->rmSystemFeatureToControl = pSystemFeatureToControl;
+	this->rmPredictor = pPredictor;
+
+	this->rmPredictedErrorType = pPredictedErrorType;
+	this->rmPredictedErrorValue = pPredictedErrorValue;
 
 	this->rmMinOperativeThresholdError = pMinOperativeThresholdError;
 	this->rmMaxOperativeThresholdError = pMaxOperativeThresholdError;
 	this->rmMinNumOfRegrSamples = pMinNumOfRegrSamples;
 	
-	this->rmPreventionThresholdTime = pPreventionThresholdTime;
+	this->rmNotificationPreventionThresholdTime = pPreventionThresholdTime;
 	
-	this->rmPredictedTimeError = pPredictedTimeError;
 	this->rmLastPredictedTimeToError = chrono::milliseconds(0);
 	this->rmLastPredictedTimeToErrorTime = chrono::system_clock::now();
 
@@ -71,7 +74,7 @@ int TcErrorDegradationTimeEstimator::fRun() {
 			fflush(stdout);
 
 			TcLinearRegressor<double, unsigned long> lr;
-			double rError = this->rmPredictedTimeError;
+			double rError = this->rmPredictedErrorValue;
 			
 			lr.fTrain(rErrors, rTimes);
 			lr.fPredict(rError, &rPrediction);
@@ -80,22 +83,38 @@ int TcErrorDegradationTimeEstimator::fRun() {
 			chrono::milliseconds cPredictedTimeToError = chrono::duration_cast<chrono::milliseconds>(cPredictedTimeOfError - chrono::system_clock::now());		
 			chrono::system_clock::time_point cPredictedTimeToErrorTime = chrono::system_clock::now();
 
-			fprintf(stdout, ANSI_COLOR_YELLOW "(%s) Reach error %f next %ldh | %ldm | %lds"  ANSI_COLOR_RESET "\n",  __func__, rError, chrono::duration_cast<chrono::hours>(cPredictedTimeToError).count(), chrono::duration_cast<chrono::minutes>(cPredictedTimeToError).count(), chrono::duration_cast<chrono::seconds>(cPredictedTimeToError).count());
+
+
+			fprintf(stdout, ANSI_COLOR_YELLOW "(%s) Reachs error %f next %ldh | %ldm | %lds"  ANSI_COLOR_RESET "\n",  __func__, rError, chrono::duration_cast<chrono::hours>(cPredictedTimeToError).count(), chrono::duration_cast<chrono::minutes>(cPredictedTimeToError).count(), chrono::duration_cast<chrono::seconds>(cPredictedTimeToError).count());
 			fprintf(stdout, "(%s) time predicted error %f, predicted time of error = %ld\n", __func__, rError, rPrediction);
 			fflush(stdout);
 
+			int rResult = cmMongoInterface->fConnectDriver();
+			if (rResult < 0) {
+				fprintf(stdout, ANSI_COLOR_RED "(%s) Connection to Mongo Driver fails with error %d\n" ANSI_COLOR_RESET, __func__, rResult);
+				fflush(stdout);
+				return(kGetDataFails);
+			}
+
+			bsoncxx::document::view_or_value cBsonDocument = bsoncxx::builder::stream::document{} << "LastSampleTimeValue" << bsoncxx::types::b_date{chrono::time_point<chrono::system_clock, chrono::milliseconds>(chrono::milliseconds(rTimes.back()))} << "PredictedTimeValue" << bsoncxx::types::b_date{cPredictedTimeOfError} << "Predictor" << bsoncxx::types::b_int64{this->rmPredictor} << "Error" << bsoncxx::types::b_double{this->rmPredictedErrorValue} << bsoncxx::builder::stream::finalize;
+			if(this->cmMongoInterface->fGetDriver()->fInserDocument(this->rmDatabaseName, "PredictedResult", cBsonDocument) < 0 ){
+				fprintf(stdout, ANSI_COLOR_YELLOW "(%s) Error on prediction insertion" ANSI_COLOR_RESET "\n", __func__);
+				fflush(stdout);
+				cmMongoInterface->fDisconnectDriver();
+				return(kRunFails);
+			}
+
+			cmMongoInterface->fDisconnectDriver();
+
 			//Time to Error is over prevention thresholds, notification is needed
-			if(cPredictedTimeToError > this->rmPreventionThresholdTime){
+			if(cPredictedTimeToError > this->rmNotificationPreventionThresholdTime){
 				fprintf(stdout, ANSI_COLOR_RED "(%s) Notification for maintainers"  ANSI_COLOR_RESET "\n",  __func__);
 				fflush(stdout);
 			}
 
-
 			this->rmLastPredictedTimeToError = cPredictedTimeToError;
 			this->rmLastPredictedTimeToErrorTime = cPredictedTimeToErrorTime;
 
-			
-			
 		}
 	}
 
@@ -120,13 +139,8 @@ int TcErrorDegradationTimeEstimator::fGetData(vector<unsigned long>* pTimes, vec
 		return(kGetDataFails);
 	}
 
-	/*
-	long long rFromMilliseconds = (long long)chrono::duration_cast<chrono::milliseconds>(cmLastSampleRead.time_since_epoch()).count();
-	long long rToMilliseconds = (long long) chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
-	*/
-
 	list<string> cDataOut;
-	if ((rResult = this->cmMongoInterface->fGetData(&cDataOut, this->rmDatabaseName, this->rmCollectionName, "Predicted_Feature", to_string(this->rmSystemFeatureToControl), "Last_Testset_Time", this->rmNumSamplesRead, 0, "", list<string>({"Errors","Last_Testset_Time"}))) < 0) {
+	if ((rResult = this->cmMongoInterface->fGetData(&cDataOut, this->rmDatabaseName, this->rmCollectionName, TcErrorDegradationTimeEstimator::kPredictorAttribute, to_string(this->rmPredictor), TcErrorDegradationTimeEstimator::kLastTestTimeAttribute, this->rmNumSamplesRead, 0, "", list<string>({TcErrorDegradationTimeEstimator::kErrorsAttribute,TcErrorDegradationTimeEstimator::kLastTestTimeAttribute}))) < 0) {
 		fprintf(stdout, ANSI_COLOR_RED "(%s) Get data from database fails with error %d"  ANSI_COLOR_RESET "\n",  __func__, rResult);
 		fflush(stdout);
 		cmMongoInterface->fDisconnectDriver();
@@ -137,9 +151,8 @@ int TcErrorDegradationTimeEstimator::fGetData(vector<unsigned long>* pTimes, vec
 
 	for(string rStringError : cDataOut) {
 		bsoncxx::document::value rError = bsoncxx::from_json(rStringError);
-		double rErrorValue = rError.view()["Errors"]["MSE"].get_double().value;
-		//auto c = chrono::time_point<chrono::system_clock, chrono::milliseconds>(rError.view()["Last_Testset_Time"].get_date().value);
-		unsigned long rErrorTimeMilliseconds = (unsigned long) chrono::time_point<chrono::system_clock, chrono::milliseconds>(rError.view()["Last_Testset_Time"].get_date().value).time_since_epoch().count();
+		double rErrorValue = rError.view()[TcErrorDegradationTimeEstimator::kErrorsAttribute][this->rmPredictedErrorType].get_double().value;
+		unsigned long rErrorTimeMilliseconds = (unsigned long) chrono::time_point<chrono::system_clock, chrono::milliseconds>(rError.view()[TcErrorDegradationTimeEstimator::kLastTestTimeAttribute].get_date().value).time_since_epoch().count();
 		rErrors.push_back(rErrorValue);
 		rTimes.push_back(rErrorTimeMilliseconds);
 	}
@@ -155,81 +168,6 @@ int TcErrorDegradationTimeEstimator::fGetData(vector<unsigned long>* pTimes, vec
 }
 
 
-
-
-/*
-int TcThresholdsAgent::fThreasholdCompare(float pValue) {
-
-	if (pValue > this->rmAlarmThresholdHigh) {
-		return(TcThresholdsAgent::kMeasureOverAlarmThreshold);
-	} else if (pValue > this->rmWarningThresholdHigh) {
-		return(TcThresholdsAgent::kMeasureOverWarningThreshold);
-	}
-
-	if (pValue < this->rmAlarmThresholdLow) {
-		return(TcThresholdsAgent::kMeasureUnderAlarmThreshold);
-	} else if (pValue < this->rmWarningThresholdLow) {
-		return(TcThresholdsAgent::kMeasureUnderWarningThreshold);
-	}
-
-	return(TcThresholdsAgent::kMeasureInRange);
-}
-
-
-
-void TcThresholdsAgent::fGetNotificationByComparing(int pComparingResult, float pValue, float pAlarmThresholdHigh, float pAlarmThresholdLow, string *pNotificationBody, string* pNotificationType, string* pNotificationTitle) {
-
-	if (pComparingResult != TcThresholdsAgent::kMeasureOverAlarmThreshold && pComparingResult != TcThresholdsAgent::kMeasureOverWarningThreshold && pComparingResult != TcThresholdsAgent::kMeasureUnderWarningThreshold && pComparingResult != TcThresholdsAgent::kMeasureUnderAlarmThreshold) {
-		*pNotificationBody = "";
-		*pNotificationType = "";
-		*pNotificationTitle = "";
-		return;
-	}
-
-	char aStringRoundedValue[16];
-	char aStringRoundedAlarmThresholdLow[16];
-	char aStringRoundedAlarmThresholdHigh[16];
-	
-	snprintf(aStringRoundedValue, 16, "%.1f", pValue);
-	snprintf(aStringRoundedAlarmThresholdLow, 16, "%.1f", pAlarmThresholdLow);
-	snprintf(aStringRoundedAlarmThresholdHigh, 16, "%.1f", pAlarmThresholdHigh);
-
-	string rRange = "Alarm Thresholds: [" + string(aStringRoundedAlarmThresholdLow) + ", " + string(aStringRoundedAlarmThresholdHigh) + "]";
-	string rTailDefaultBody = "Value: " + string(aStringRoundedValue) + "\n" + rRange;
-
-	switch (pComparingResult) {
-	case TcThresholdsAgent::kMeasureUnderAlarmThreshold:
-		*pNotificationBody = "Under minimum threshold\n" + rTailDefaultBody;
-		*pNotificationType = "Alarm";
-		*pNotificationTitle = "Alarm ";
-		break;
-	case TcThresholdsAgent::kMeasureUnderWarningThreshold:
-		*pNotificationBody = "Close to minimum threshold\n" + rTailDefaultBody;
-		*pNotificationType = "Warning";
-		*pNotificationTitle = "Warning ";
-		break;
-	case TcThresholdsAgent::kMeasureOverAlarmThreshold:
-		*pNotificationBody = "Over maximum threshold\n" + rTailDefaultBody;
-		*pNotificationType = "Alarm";
-		*pNotificationTitle = "Alarm ";
-		break;
-	case TcThresholdsAgent::kMeasureOverWarningThreshold:
-		*pNotificationBody = "Close to maximum threshold\n" + rTailDefaultBody;
-		*pNotificationType = "Warning";
-		*pNotificationTitle = "Warning ";
-		break;
-	default:
-		*pNotificationBody = "";
-		*pNotificationType = "";
-		*pNotificationTitle = "";
-	}
-
-	return;
-}
-
-void TcThresholdsAgent::fAdjustNotificatedThresholds(float* pMeasureValue, float* pMeasureAlarmThresholdHigh, float* pMeasureAlarmThresholdLow) {
-	return;
-}
-
-*/
-
+const string TcErrorDegradationTimeEstimator::kPredictorAttribute = "Predicted_Feature";
+const string TcErrorDegradationTimeEstimator::kErrorsAttribute = "Errors";
+const string TcErrorDegradationTimeEstimator::kLastTestTimeAttribute = "Last_Testset_Time";

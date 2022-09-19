@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <exception>
 
+#include "TcColors.h"
+
 //y = a0 + a1*x
 
 using namespace std;
@@ -17,8 +19,8 @@ class TcLinearRegressor {
     private:
         vector<x> rmX;
         vector<y> rmY;
-        double rmA0;
-        double rmA1;
+        double rmQ;
+        double rmM;
     
     public:
     class TcError {
@@ -34,7 +36,7 @@ class TcLinearRegressor {
         public:
             static const int kValidTraining = 0;
             static const int kErr_NoLabels = -4;
-            static const int kErr_NoLabelsFeaturesRelationship = -5;
+            static const int kErr_InvalidDataSize = -5;
             static const int kErr_NoFeatures = -3;
             static const int kErr_MathMultiply = -6;
             static const int kErr_MathMultiplyMatVect = -7;
@@ -46,19 +48,22 @@ class TcLinearRegressor {
     TcLinearRegressor() {}
     ~TcLinearRegressor() {}
 
-    void fTrain(vector<x> pX, vector<y> pY) {
+    int fTrain(vector<x> pX, vector<y> pY) {
         double sumX;
         double sumX2;
         double sumY;
         double sumXY;
-        int n = pX.size();
         
-        if(n != pY.size()){
-            __throw_runtime_error("Y and X sizes are different");
+        fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	    fflush(stdout);
+
+        if(pX.size() <= 0 || pX.size() != pY.size()){
+            fprintf(stdout, ANSI_COLOR_RED "(%s) Invalid data size X=%d, Y=%d"  ANSI_COLOR_RESET "\n",  __func__, (int) pX.size(), (int) pY.size());
+		    fflush(stdout);
+            return(TcError::TcTraining::kErr_InvalidDataSize);
         }
 
-        this->rmX = pX;
-        this->rmY = pY;
+        int n = pX.size();
 
         for(int i=0;i<n;i++){
             sumX = sumX + pX[i];
@@ -68,18 +73,30 @@ class TcLinearRegressor {
         }
 
         /* Calculating a and b */
-        this->rmA1 = (double) (n*sumXY-sumX*sumY)/(n*sumX2-sumX*sumX);
-        this->rmA0 = (double) (sumY - this->rmA1*sumX)/n;
+        this->rmM = (double) (n*sumXY-sumX*sumY)/(n*sumX2-sumX*sumX);
+        this->rmQ = (double) (sumY - this->rmM*sumX)/n;
         
-        fprintf(stdout, "(%s) Calculated value of A0 is %f and A1 is %f\n", __func__, this->rmA0, this->rmA1);
+        fprintf(stdout, "(%s) Calculated value of q is %f and m is %f\n", __func__, this->rmQ, this->rmM);
 		fflush(stdout);
 
-        fprintf(stdout, "(%s) Equation of best fit is: y = %f + %fx\n", __func__, this->rmA0, this->rmA1);
+        fprintf(stdout, "(%s) Equation of best fit is: y = %f + %fx\n", __func__, this->rmQ, this->rmM);
 		fflush(stdout);
+
+        fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+	    fflush(stdout);
+
+        return(TcError::TcTraining::kValidTraining);
     }
     
-    void fPredict(x pFeature, y* pPredictedValue){
-        *pPredictedValue = (y) (this->rmA0 + this->rmA1*pFeature);
+    void fPredict(x pSample, y* pPredictedValue){
+        fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	    fflush(stdout);
+        
+        *pPredictedValue = (y) (this->rmQ + this->rmM*pSample);
+
+        fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+	    fflush(stdout);
+
     }
 };
 

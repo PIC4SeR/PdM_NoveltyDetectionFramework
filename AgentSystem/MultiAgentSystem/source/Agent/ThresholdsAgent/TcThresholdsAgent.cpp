@@ -4,6 +4,7 @@
 #include <bsoncxx/types.hpp>
 #include "../../../include/Agent/ThresholdsAgent/TcThresholdsAgent.h"
 #include "../../../include/TcMeasure.h"
+#include "../../../include/TcColors.h"
 
 
 

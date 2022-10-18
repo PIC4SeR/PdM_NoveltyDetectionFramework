@@ -10,23 +10,29 @@ import pymongo as pymongo
 from typing import List
 from typing import Dict
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.tree import DecisionTreeRegressor
 import pandas as pd
 import joblib
 import matplotlib.pyplot as plt
 import os
 import threading
 import msvcrt
+import time
 
 
 
 class Predictor:
     def __init__(self, predicted_feature: int, testresult_collection: pymongo.collection.Collection,
                  random_state, n_estimators, max_features):
-        self.__rf__ = RandomForestRegressor(random_state=random_state, n_estimators=n_estimators, max_features=max_features)
+        #self.__rf__ = RandomForestRegressor(random_state=random_state, n_estimators=n_estimators, max_features=max_features)
+        #self.__rf__=LinearRegression()
+        self.__rf__ = DecisionTreeRegressor()
         self.__test_result_collection__ = testresult_collection
         self.__predicted_feature__ = predicted_feature
-        self.__directory__ = 'Trained_Models'
+        self.__directory__ = 'Trained_Models_Low_dr'
         self.__filename__ = 'Predictor_' + str(self.__predicted_feature__) + '_Model.sav'
+        
 
     def SelectLabel(self, dataset: List[List[float]]):
         try:
@@ -114,6 +120,7 @@ class Predictor:
 
 
     def Train(self, trainset: List[List[float]]):
+        
         try:
             train_labels = self.SelectLabel(dataset=trainset)
             train_features = self.SelectFeatures(dataset=trainset)
@@ -209,7 +216,8 @@ class Predictor:
             print(e)
             raise e
 
-        test_result['Last_Testset_Time'] = last_testset_time
+        test_result['Timestamp'] = datetime.fromtimestamp(last_testset_time)
+        test_result['TimestampUnix'] = datetime.timestamp(test_result['Timestamp'])
         test_result['Predicted_Feature'] = int(self.__predicted_feature__)
         return test_result
 
@@ -225,20 +233,29 @@ class AI_Unit:
                 testresult_collection: pymongo.collection.Collection,
                 predicted_features: List[int],
                 windows: int = 20, 
-                random_state: int = 42, n_estimators: int = 10, max_features: int = 10):
+                random_state: int = 42, n_estimators: int = 10, max_features: int = 10, file: str='None'):
 
         self.__trained__ = False
         self.__tested__ = False
         self.__nmin_datasets_for_train__ = nmin_datasets_for_train
         self.__nmin_datasets_for_test__ = nmin_dataset_for_test
         self.__nmax_datasets_for_test__ = nmax_dataset_for_test
-        self.__last__ = datetime.now()
+        #self.__last__ = datetime.now()
         self.__rawdataset_collection__ = rawdataset_collection
         self.__trainset_collection__ = trainset_collection
         self.__testresult_collection__ = testresult_collection
         self.__predictors__ = []
         self.__column_names__=column_names
         self.__windows__=windows
+        self.__starttime__=datetime.now()
+        global startpreprocesstime
+        global startpredicttime
+        global starttraintime
+        global endpredicttime
+        global endtraintime
+        global endpreprocesstime
+        if file != 'None':
+            self.__file__ = open(file, 'a')
         for pf in predicted_features:
             self.__predictors__.append(Predictor(predicted_feature=pf,
                                                  testresult_collection=self.__testresult_collection__, random_state=random_state, n_estimators=n_estimators, max_features=max_features))
@@ -252,11 +269,18 @@ class AI_Unit:
 
     def Train(self, trainsets: List[Dict], update = False):
         #print('Preprocess trainsets')
+        startpreprocesstime = (datetime.now() - self.__starttime__).total_seconds()
+        #print('Start Preprocess Time ' + str(startpreprocesstime))
         complete_trainset = self.Preprocess(datasets=trainsets)
-
+        endpreprocesstime = (datetime.now() - self.__starttime__).total_seconds()
+        try:
+            self.__file__.write('Start Preprocess Time ' + str(startpreprocesstime) + '\n')
+            self.__file__.write('End Preprocess Time ' + str(endpreprocesstime) + '\n')
+        except:
+            print('---')
         #print('Launch predictors trainers')
         trainers = []
-
+        starttraintime = (datetime.now() - self.__starttime__).total_seconds()
         if update == False:
             for predictor in self.__predictors__:
                 trainer = predictor.Trainer(trainset=complete_trainset)
@@ -265,25 +289,45 @@ class AI_Unit:
             for predictor in self.__predictors__:
                 trainer = predictor.Trainer(trainset=complete_trainset, update = True)
                 trainers.append(trainer)
-
+        
         #print('Wait for predictors trainers')
         for trainer in trainers:
             trainer.join()
+        endtraintime = (datetime.now() - self.__starttime__).total_seconds()
+        try:
+            self.__file__.write('Start Train Time ' + str(starttraintime) + '\n')
+            self.__file__.write('End Train Time: ' + str(endtraintime) + '\n')
+        except:
+            print('---')
             #print(trainer.getName() + ' ends train')
 
         #print('Predictors trainers end')
-
         self.__trained__ = True
-        return trainsets[len(trainsets) - 1]['Timestamp']
+        return trainsets[len(trainsets) - 1]['TimestampUnix']
 
     def Test(self, testsets: List[Dict]):
+        startpreprocesstime = (datetime.now() - self.__starttime__).total_seconds()
         complete_testset = self.Preprocess(datasets=testsets)
-        last_testset_time = testsets[len(testsets) - 1]['Timestamp']
+        endpreprocesstime = (datetime.now() - self.__starttime__).total_seconds()
+        try:
+            self.__file__.write('Start Preprocess Time ' + str(startpreprocesstime) + '\n')
+            self.__file__.write('End Preprocess Time ' + str(endpreprocesstime) + '\n')
+        except:
+            print('---')
+        last_testset_time = testsets[len(testsets) - 1]['TimestampUnix']
         testers = []
+        startpredicttime = (datetime.now() - self.__starttime__).total_seconds()
         for predictor in self.__predictors__:
             tester = predictor.Tester(testset=complete_testset, last_testset_time=last_testset_time)
             testers.append(tester)
-        return testsets[len(testsets) - 1]['Timestamp']
+        endpredicttime = (datetime.now() - self.__starttime__).total_seconds()
+        try:
+            self.__file__.write('Start Predict Time ' + str(startpredicttime) + '\n')
+            self.__file__.write('End Predict Time ' + str(endpredicttime) + '\n')
+        except:
+            print('----')
+        
+        return last_testset_time
 
 
     def Preprocess(self, datasets):
@@ -291,6 +335,7 @@ class AI_Unit:
         for dataset in datasets:
             ds = dataset.copy()
             del ds['Timestamp']
+            del ds['TimestampUnix']
             data=pd.DataFrame(ds, index=[0])
             names=[]
             for string in self.__column_names__:
@@ -336,9 +381,8 @@ class AI_Unit:
                         trainsets.append(dataset)
                     self.__last__ = self.Train(trainsets=trainsets)
                     self.__trained__ = True
-
                 if self.__rawdataset_collection__.count_documents({}) >= self.__nmin_datasets_for_train__ and not(already_trained):
-                    for dataset in self.__rawdataset_collection__.find({}, {'_id': False}).sort('Timestamp', pymongo.ASCENDING).limit(self.__nmin_datasets_for_train__):
+                    for dataset in self.__rawdataset_collection__.find({}, {'_id': False}).sort('TimestampUnix', pymongo.ASCENDING).limit(self.__nmin_datasets_for_train__):
                         self.__trainset_collection__.insert_one(dataset)
                         trainsets.append(dataset)
                     self.__last__ = self.Train(trainsets=trainsets)
@@ -347,16 +391,19 @@ class AI_Unit:
             while 1:
                 testsets = []
                 if len(list(self.__testresult_collection__.find())) > 0:
-                    self.__last__= self.__testresult_collection__.find_one(sort=[('Last_Testset_Time', pymongo.DESCENDING)])['Last_Testset_Time']
-                if self.__rawdataset_collection__.count_documents({'Timestamp': {'$gt': self.__last__}}) > self.__nmin_datasets_for_test__:
-                    for dataset in self.__rawdataset_collection__.find({'Timestamp': {'$gt': self.__last__}}, {'_id': False}).sort('Timestamp', pymongo.ASCENDING).limit(self.__nmax_datasets_for_test__):
+                    self.__last__= self.__testresult_collection__.find_one(sort=[('TimestampUnix', pymongo.DESCENDING)])['TimestampUnix']
+                if self.__rawdataset_collection__.count_documents({'TimestampUnix': {'$gt': self.__last__}}) > self.__nmin_datasets_for_test__:
+                    
+                    for dataset in self.__rawdataset_collection__.find({'TimestampUnix': {'$gt': self.__last__}}, {'_id': False}).sort('TimestampUnix', pymongo.ASCENDING).limit(self.__nmax_datasets_for_test__):
                         testsets.append(dataset)
                     self.__last__ = self.Test(testsets=testsets)
+                else: #Solo per prove
+                    print('Dataset Finito')
                 if msvcrt.kbhit():
                     key = input()
                     if key == 'U':
-                        if self.__rawdataset_collection__.count_documents({'Timestamp': {'$gt': self.__last__}}) >= self.__nmin_datasets_for_train__:
-                            for dataset in self.__rawdataset_collection__.find({'Timestamp': {'$gt': self.__last__}}, {'_id': False}).sort('Timestamp', pymongo.ASCENDING).limit(self.__nmin_datasets_for_train__):
+                        if self.__rawdataset_collection__.count_documents({'TimestampUnix': {'$gt': self.__last__}}) >= self.__nmin_datasets_for_train__:
+                            for dataset in self.__rawdataset_collection__.find({'TimestampUnix': {'$gt': self.__last__}}, {'_id': False}).sort('TimestampUnix', pymongo.ASCENDING).limit(self.__nmin_datasets_for_train__):
                                 self.__trainset_collection__.insert_one(dataset)
                                 trainsets.append(dataset)
                             self.__last__ = self.Train(trainsets=trainsets, update = True)
@@ -364,24 +411,25 @@ class AI_Unit:
                         self.__trainset_collection__.drop()
                         self.__testresult_collection__.drop()
                         trainsets=[]
-                        if self.__rawdataset_collection__.count_documents({'Timestamp': {'$gt': self.__last__}}) >= self.__nmin_datasets_for_train__:
-                            for dataset in self.__rawdataset_collection__.find({'Timestamp': {'$gt': self.__last__}}, {'_id': False}).sort('Timestamp', pymongo.ASCENDING).limit(self.__nmin_datasets_for_train__):
+                        if self.__rawdataset_collection__.count_documents({'TimestampUnix': {'$gt': self.__last__}}) >= self.__nmin_datasets_for_train__:
+                            for dataset in self.__rawdataset_collection__.find({'TimestampUnix': {'$gt': self.__last__}}, {'_id': False}).sort('TimestampUnix', pymongo.ASCENDING).limit(self.__nmin_datasets_for_train__):
                                 self.__trainset_collection__.insert_one(dataset)
                                 trainsets.append(dataset)
                             self.__last__ = self.Train(trainsets=trainsets, update = True)
+                #time.sleep(3)
         except Exception as e:
             print(e)
 
 
 # Load a dataset file into defined MongoDB collection
-def LoadDataset(mongodb_collection: pymongo.collection.Collection, dataset_filepath: str, separator=',', header=None):
+'''def LoadDataset(mongodb_collection: pymongo.collection.Collection, dataset_filepath: str, separator=',', header=None):
     import pandas as pd
     try:
         df = pd.read_csv(dataset_filepath, sep=separator, header=header)
         df['Timestamp'] = df['Timestamp'].apply(lambda strdate: datetime.strptime(strdate, '%d-%b-%Y'))
         df.apply(lambda row: mongodb_collection.insert_one(document=row.to_dict()), axis=1)
     except Exception as e:
-        print(e)
+        print(e)'''
 
 
 
@@ -390,10 +438,9 @@ MongoClient = pymongo.MongoClient('mongodb://localhost:27017')
 RawDB = MongoClient['RawDB']
 InfoDB = MongoClient['InfoDB']
 
-Dataset = RawDB['Dataset']
-Trainset = RawDB['Trainset']
-TestResult = InfoDB['TestResult']
-
+Dataset = RawDB['DLOW']
+Trainset = RawDB['TRSLOW_dr']
+TestResult = InfoDB['TRLOW_dr']
 
 # LoadDataset(mongodb_collection=Dataset, dataset_filepath='./Dataset.txt', separator=',', header=0)
 
@@ -401,8 +448,11 @@ TestResult = InfoDB['TestResult']
 #label_strings=['ax_a_','ay_a_','ax_b_','ay_b_','ax_c_','ay_c_','ax_d_','ay_d_']
 label_strings=['axBearDx_','axBearSx_','ayBearDx_','ayBearSx_','axShaft_','ayShaft_']
 
+windows = 20
 #Prediction wanted set by user
-features_desired=[2,10,1,19,100]
+features_desired=[]
+for i in range(1,len(label_strings)*windows,1):
+    features_desired.append(i)
 
 AIU = AI_Unit(
             column_names=label_strings,
@@ -413,7 +463,7 @@ AIU = AI_Unit(
             rawdataset_collection=Dataset,
             trainset_collection=Trainset,
             testresult_collection=TestResult,
-            windows = 20, 
+            windows = windows, 
             random_state=0, n_estimators=6, max_features=2)
 AIU.Run()
 

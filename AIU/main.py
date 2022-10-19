@@ -231,9 +231,10 @@ class AI_Unit:
                 rawdataset_collection: pymongo.collection.Collection,
                 trainset_collection: pymongo.collection.Collection,
                 testresult_collection: pymongo.collection.Collection,
+                performance: pymongo.collection.Collection,
                 predicted_features: List[int],
                 windows: int = 20, 
-                random_state: int = 42, n_estimators: int = 10, max_features: int = 10, file: str='None'):
+                random_state: int = 42, n_estimators: int = 10, max_features: int = 10):
 
         self.__trained__ = False
         self.__tested__ = False
@@ -254,8 +255,6 @@ class AI_Unit:
         global endpredicttime
         global endtraintime
         global endpreprocesstime
-        if file != 'None':
-            self.__file__ = open(file, 'a')
         for pf in predicted_features:
             self.__predictors__.append(Predictor(predicted_feature=pf,
                                                  testresult_collection=self.__testresult_collection__, random_state=random_state, n_estimators=n_estimators, max_features=max_features))
@@ -274,6 +273,7 @@ class AI_Unit:
         complete_trainset = self.Preprocess(datasets=trainsets)
         endpreprocesstime = (datetime.now() - self.__starttime__).total_seconds()
         try:
+            
             self.__file__.write('Start Preprocess Time ' + str(startpreprocesstime) + '\n')
             self.__file__.write('End Preprocess Time ' + str(endpreprocesstime) + '\n')
         except:
@@ -416,7 +416,6 @@ class AI_Unit:
                                 self.__trainset_collection__.insert_one(dataset)
                                 trainsets.append(dataset)
                             self.__last__ = self.Train(trainsets=trainsets, update = True)
-                #time.sleep(3)
         except Exception as e:
             print(e)
 
@@ -441,6 +440,7 @@ InfoDB = MongoClient['InfoDB']
 Dataset = RawDB['DLOW']
 Trainset = RawDB['TRSLOW_dr']
 TestResult = InfoDB['TRLOW_dr']
+Performance = InfoDB['Performance']
 
 # LoadDataset(mongodb_collection=Dataset, dataset_filepath='./Dataset.txt', separator=',', header=0)
 
@@ -463,8 +463,9 @@ AIU = AI_Unit(
             rawdataset_collection=Dataset,
             trainset_collection=Trainset,
             testresult_collection=TestResult,
+            performance = Performance,
             windows = windows, 
-            random_state=0, n_estimators=6, max_features=2)
+            random_state=0, n_estimators=6, max_features=2,)
 AIU.Run()
 
 

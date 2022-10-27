@@ -3,7 +3,6 @@
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 from msilib.schema import File
-import this
 from datetime import datetime
 import numpy as np
 import pymongo as pymongo
@@ -19,18 +18,19 @@ import os
 import threading
 import msvcrt
 import time
+import sys
 
 
 
 class Predictor:
     def __init__(self, predicted_feature: int, testresult_collection: pymongo.collection.Collection,
                  random_state, n_estimators, max_features):
-        #self.__rf__ = RandomForestRegressor(random_state=random_state, n_estimators=n_estimators, max_features=max_features)
+        self.__rf__ = RandomForestRegressor(random_state=random_state, n_estimators=n_estimators, max_features=max_features)
         #self.__rf__=LinearRegression()
-        self.__rf__ = DecisionTreeRegressor()
+        #self.__rf__ = DecisionTreeRegressor()
         self.__test_result_collection__ = testresult_collection
         self.__predicted_feature__ = predicted_feature
-        self.__directory__ = 'Trained_Models_Low_dr'
+        self.__directory__ = 'TR'
         self.__filename__ = 'Predictor_' + str(self.__predicted_feature__) + '_Model.sav'
         
 
@@ -245,6 +245,7 @@ class AI_Unit:
         self.__rawdataset_collection__ = rawdataset_collection
         self.__trainset_collection__ = trainset_collection
         self.__testresult_collection__ = testresult_collection
+        self.__perf_collection__ = performance
         self.__predictors__ = []
         self.__column_names__=column_names
         self.__windows__=windows
@@ -273,9 +274,7 @@ class AI_Unit:
         complete_trainset = self.Preprocess(datasets=trainsets)
         endpreprocesstime = (datetime.now() - self.__starttime__).total_seconds()
         try:
-            
-            self.__file__.write('Start Preprocess Time ' + str(startpreprocesstime) + '\n')
-            self.__file__.write('End Preprocess Time ' + str(endpreprocesstime) + '\n')
+            self.__perf_collection__.insert_one({'PreprocessTrain_Time': endpreprocesstime - startpreprocesstime})
         except:
             print('---')
         #print('Launch predictors trainers')
@@ -295,8 +294,7 @@ class AI_Unit:
             trainer.join()
         endtraintime = (datetime.now() - self.__starttime__).total_seconds()
         try:
-            self.__file__.write('Start Train Time ' + str(starttraintime) + '\n')
-            self.__file__.write('End Train Time: ' + str(endtraintime) + '\n')
+            self.__perf_collection__.insert_one({'Train_Time': endtraintime - starttraintime})
         except:
             print('---')
             #print(trainer.getName() + ' ends train')
@@ -310,8 +308,7 @@ class AI_Unit:
         complete_testset = self.Preprocess(datasets=testsets)
         endpreprocesstime = (datetime.now() - self.__starttime__).total_seconds()
         try:
-            self.__file__.write('Start Preprocess Time ' + str(startpreprocesstime) + '\n')
-            self.__file__.write('End Preprocess Time ' + str(endpreprocesstime) + '\n')
+            self.__perf_collection__.insert_one({'PreprocessTest_Time': endpreprocesstime - startpreprocesstime})
         except:
             print('---')
         last_testset_time = testsets[len(testsets) - 1]['TimestampUnix']
@@ -322,8 +319,7 @@ class AI_Unit:
             testers.append(tester)
         endpredicttime = (datetime.now() - self.__starttime__).total_seconds()
         try:
-            self.__file__.write('Start Predict Time ' + str(startpredicttime) + '\n')
-            self.__file__.write('End Predict Time ' + str(endpredicttime) + '\n')
+            self.__perf_collection__.insert_one({'Test_Time': endpredicttime - startpredicttime})
         except:
             print('----')
         
@@ -399,6 +395,7 @@ class AI_Unit:
                     self.__last__ = self.Test(testsets=testsets)
                 else: #Solo per prove
                     print('Dataset Finito')
+                    sys.exit("Dataset Finito")
                 if msvcrt.kbhit():
                     key = input()
                     if key == 'U':
@@ -433,14 +430,16 @@ class AI_Unit:
 
 
 MongoClient = pymongo.MongoClient('mongodb://localhost:27017')
+MongoClient['PerformanceDB']['TR_LOW'].drop()
+MongoClient['PerformanceDB']['LOW'].drop()
+MongoClient['PerformanceDB']['z'].drop()
+#RawDB = MongoClient['RawDB']
+InfoDB = MongoClient['PerformanceDB']
 
-RawDB = MongoClient['RawDB']
-InfoDB = MongoClient['InfoDB']
-
-Dataset = RawDB['DLOW']
-Trainset = RawDB['TRSLOW_dr']
-TestResult = InfoDB['TRLOW_dr']
-Performance = InfoDB['Performance']
+Dataset = InfoDB['DLOW']
+Trainset = InfoDB['TR_LOW']
+TestResult = InfoDB['LOW']
+Performance = InfoDB['z']
 
 # LoadDataset(mongodb_collection=Dataset, dataset_filepath='./Dataset.txt', separator=',', header=0)
 
@@ -465,8 +464,10 @@ AIU = AI_Unit(
             testresult_collection=TestResult,
             performance = Performance,
             windows = windows, 
-            random_state=0, n_estimators=6, max_features=2,)
+            random_state=0, n_estimators=6, max_features=2)
 AIU.Run()
+
+
 
 
 

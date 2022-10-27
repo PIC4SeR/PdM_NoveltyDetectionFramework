@@ -87,20 +87,20 @@ void TcAgentSystem::fWaitManager(thread* pManagerThread) {
 }
 
 int main()
-{
+{ 
 	string rMongoDBConnectionType = "mongodb";
 	string rMongoDBConnectionHost = "127.0.0.1";
 	uint16_t rMongoDBConnectionPort = 27017;
 	
 	string rMongoDBDatabasename = "InfoDB";
-	string rMongoDBCollectionname = "TRLOW_rf";
+	string rMongoDBCollectionname = "LOW";
 
 	TcAgentSystem* system = new TcAgentSystem("S - 0", "System - 0");
 	system->fLoadManager("AM0", "Agent Manager", chrono::microseconds(10000), chrono::microseconds(50000000000000));
 	
 	for (int i = 1; i < 120; i++)
 	{
-		system->fLoadAgent(new TcErrorDegradationTimeEstimator(4, i, "MAE", 40, 5, 3000, 4, 
+		system->fLoadAgent(new TcErrorDegradationTimeEstimator(4, i, "MAE", 40, 1, 3000, 4, 
 			chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)), rMongoDBDatabasename, 
 			rMongoDBCollectionname, rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort,
 			string("MSE-DTE"), string("MSE-Degradation-Time-Estimator"), chrono::microseconds(10000)));

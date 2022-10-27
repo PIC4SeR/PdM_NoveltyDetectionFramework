@@ -120,6 +120,7 @@ int TcErrorDegradationTimeEstimator::fRun() {
 				<< "ActualError" << bsoncxx::types::b_double{rErrors.front() }
 				<< "M" << bsoncxx::types::b_double{ lr.rmM } 
 				<< "Q" << bsoncxx::types::b_double{ lr.rmQ }
+				<< "AvTime" << bsoncxx::types::b_double{ lr.AvTime }
 				<< bsoncxx::builder::stream::finalize;
 			
 			

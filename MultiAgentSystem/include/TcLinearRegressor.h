@@ -7,7 +7,7 @@
 #include <chrono>
 #include <stdio.h>
 #include <exception>
-
+#include <boost/math/statistics/linear_regression.hpp>
 #include "TcColors.h"
 
 //y = a0 + a1*x
@@ -23,6 +23,7 @@ class TcLinearRegressor {
     public:
         double rmQ;
         double rmM;
+        double AvTime;
     class TcError {
     public:
         class TcPrediction {
@@ -49,7 +50,32 @@ class TcLinearRegressor {
     ~TcLinearRegressor() {}
 
     int fTrain(vector<x> pX, vector<y> pY) {
-        double sumX = 0;
+        using boost::math::statistics::simple_ordinary_least_squares;
+        using boost::math::statistics::mean;
+
+        int n = pX.size();
+        int len = n / 2;
+
+        vector<double> subX1(pX.begin(), pX.begin() + len);
+        vector<double> subX2(pX.begin() + len + 1, pX.end());
+        vector<double> subTime1(pY.begin(), pY.begin() + len);
+        vector<double> subTime2(pY.begin() + len + 1, pY.end());
+
+        double mean1 = mean(subX1);
+        double mean2 = mean(subX2);
+        double meanT1 = mean(subTime1);
+        double meanT2 = mean(subTime2);
+
+        vector<double> xFinal{ mean2, mean1 };
+        vector<double> yFinal{ meanT2,meanT1 };
+
+        auto [c0, c1] = simple_ordinary_least_squares(yFinal, xFinal);
+
+        this->rmM = c1;
+        this->rmQ = c0;
+        this->AvTime = meanT2;
+
+        /*double sumX = 0;
         double sumX2 = 0;
         double sumY = 0;
         double sumXY = 0;
@@ -70,21 +96,21 @@ class TcLinearRegressor {
             sumX2 = sumX2 + pX[i]*pX[i];
             sumY = sumY + pY[i];
             sumXY = sumXY + pX[i] * ((x) pY[i]);
-        }
+        }*/
 
         /* Calculating a and b */
-        this->rmM = (double) (n*sumXY-sumX*sumY)/(n*sumX2-sumX*sumX);
-        this->rmQ = (double) (sumY - this->rmM*sumX)/n;
+        //this->rmM = (double) (n*sumXY-sumX*sumY)/(n*sumX2-sumX*sumX);
+        //this->rmQ = (double) (sumY - this->rmM*sumX)/n;
         
-        fprintf(stdout, "(%s) Calculated value of q is %f and m is %f\n", __func__, this->rmQ, this->rmM);
+        /*fprintf(stdout, "(%s) Calculated value of q is %f and m is %f\n", __func__, this->rmQ, this->rmM);
 		fflush(stdout);
 
         fprintf(stdout, "(%s) Equation of best fit is: y = %f + %fx\n", __func__, this->rmQ, this->rmM);
 		fflush(stdout);
 
         fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
-	    fflush(stdout);
-
+	    fflush(stdout);*/
+        
         return(TcError::TcTraining::kValidTraining);
     }
     

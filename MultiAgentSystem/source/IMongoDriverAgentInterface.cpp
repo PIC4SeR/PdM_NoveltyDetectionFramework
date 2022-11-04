@@ -6,8 +6,7 @@
 
 #include "../include/IMongoDriverAgentInterface.h"
 #include "../include/TcMongoDriver.h"
-#include "../include/TcMeasure.h"
-
+#include "../include/Agent/ErrorDegradationTimeEstimatorAgent/TcErrorDegradationTimeEstimator.h"
 
 IMongoDriverAgentInterface::IMongoDriverAgentInterface(string pMongoDriverName, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort){
     this->cmMongoDriver = new TcMongoDriver(pMongoDriverName, pMongoDriverRemoteConnectionType, pMongoDriverRemoteConnectionHost, pMongoDriverRemoteConnectionPort);
@@ -29,16 +28,18 @@ TcMongoDriver* IMongoDriverAgentInterface::fGetDriver() {
 }
 
 
-int IMongoDriverAgentInterface::fGetData(list<string> *pOutput, string pDatabase, string pCollection, string pFilterattribute, string pFiltervalue, string pSortattribute, int pLimit, int pSkip, string pGroupattribute, list<string> pProjectionattributes){
+int IMongoDriverAgentInterface::fGetLastErrors(list<double> *pErrors, list<long long> *pTimes, string pErrorType, string pDatabase, string pCollection, string pFilterattribute, string pFiltervalue, string pSortattribute, int pLimit, int pSkip, string pGroupattribute, list<string> pProjectionattributes){
     list<string> cOutputList;
+    list<long long> rTimes;
+	list<double> rErrors;
 	int rResult = 0;
     
     string rSortString;
     string rProjectionString;
     string rFilterString;
 
-    //fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
-	//fflush(stdout);
+    fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
 
 
     if (pFilterattribute == "") {
@@ -81,10 +82,48 @@ int IMongoDriverAgentInterface::fGetData(list<string> *pOutput, string pDatabase
         return(IMongoDriverAgentInterface::kQueryFails);
     }
 
-	*pOutput = cOutputList;
+    for(string rStringError : cOutputList) {
+		bsoncxx::document::value rError = bsoncxx::from_json(rStringError);
+		double rErrorValue = rError.view()[TcErrorDegradationTimeEstimator::kErrorsAttribute][pErrorType].get_double().value;
+		rErrors.push_back(rErrorValue);
+		rTimes.push_back(rError.view()[TcErrorDegradationTimeEstimator::kLastTestTimeAttribute].get_date().value.count());
+	}
+
+	*pErrors = rErrors;
+	*pTimes = rTimes;
+
 
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
+
+
+
+int IMongoDriverAgentInterface::fInsertPrediction(string pDatabase, string pCollection, chrono::system_clock::time_point pAgentStartTime, long long pLastErrorTime, double pLastError, long long pPrediction, double pMcoefficient, double pQoffset, chrono::system_clock::time_point pStartTrainTime, chrono::system_clock::time_point pEndTrainTime, chrono::system_clock::time_point pEndPredictionTime, chrono::system_clock::time_point pPredictedTimeOfError, chrono::milliseconds pPredictedTimeToError, int pPredictor){
+		bsoncxx::document::view_or_value cBsonDocument = bsoncxx::builder::stream::document{} 
+		<< TcErrorDegradationTimeEstimator::kActualErrorTime << bsoncxx::types::b_date{chrono::time_point<chrono::system_clock, chrono::milliseconds>(chrono::milliseconds(pLastErrorTime))}
+		<< TcErrorDegradationTimeEstimator::kAgentStartTime << bsoncxx::types::b_date{ pAgentStartTime }
+		<< TcErrorDegradationTimeEstimator::kTrainStartTime << bsoncxx::types::b_date{ pStartTrainTime }
+		<< TcErrorDegradationTimeEstimator::kTrainEndTime << bsoncxx::types::b_date{ pEndTrainTime }
+		<< TcErrorDegradationTimeEstimator::kPredictEndTime << bsoncxx::types::b_date{ pEndPredictionTime }
+		<< TcErrorDegradationTimeEstimator::kAgentEndTime << bsoncxx::types::b_date{ chrono::system_clock::now() }
+		<< TcErrorDegradationTimeEstimator::kEstimDegradTime << bsoncxx::types::b_date{ pPredictedTimeOfError }
+		<< TcErrorDegradationTimeEstimator::kRemainingTime << bsoncxx::types::b_int64{ pPredictedTimeToError.count()}
+		<< TcErrorDegradationTimeEstimator::kPredictor << bsoncxx::types::b_int64{pPredictor} 
+		<< TcErrorDegradationTimeEstimator::kActualError << bsoncxx::types::b_double{pLastError}
+		<< TcErrorDegradationTimeEstimator::kM << bsoncxx::types::b_double{ pMcoefficient} 
+		<< TcErrorDegradationTimeEstimator::kQ << bsoncxx::types::b_double{ pQoffset }
+		<< bsoncxx::builder::stream::finalize;
+			
+			
+		if(this->cmMongoDriver->fInserDocument(pDatabase, pCollection, cBsonDocument) < 0 ){
+			fprintf(stdout, ANSI_COLOR_YELLOW "(%s) Error on prediction insertion" ANSI_COLOR_RESET "\n", __func__);
+			fflush(stdout);
+			return(kErr_Insert);
+		}
+
+        return(kInsert_Ok);
+}
+
 
 int IMongoDriverAgentInterface::fGetDataMaxOf(string *pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pMaxattribute, string pGroupattribute, string pProjectionattribute){
 	list<string> cOutputList;

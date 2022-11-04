@@ -1,4 +1,4 @@
-#pragma once
+
 #ifndef TCCOLORS_H
 #define TCCOLORS_H
 

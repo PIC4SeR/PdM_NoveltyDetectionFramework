@@ -18,7 +18,7 @@ using namespace std;
 
 
 TcOneShotAgent::TcOneShotAgent() { ; }
-TcOneShotAgent::TcOneShotAgent(string pCollectionName, string pDatabaseName, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pAgentID, string pAgentName, IAgent::Priority pPriority) : TcAgent(pDatabaseName, pCollectionName, pMongoDriverRemoteConnectionType, pMongoDriverRemoteConnectionHost, pMongoDriverRemoteConnectionPort, pAgentID, pAgentName, chrono::microseconds(0), chrono::high_resolution_clock::now(), pPriority, false) { ; }
+TcOneShotAgent::TcOneShotAgent(string pDatabaseName, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pAgentID, string pAgentName, IAgent::Priority pPriority) : TcAgent(pDatabaseName, pMongoDriverRemoteConnectionType, pMongoDriverRemoteConnectionHost, pMongoDriverRemoteConnectionPort, pAgentID, pAgentName, chrono::microseconds(0), chrono::high_resolution_clock::now(), pPriority, false) { ; }
 TcOneShotAgent::~TcOneShotAgent(){ ; }
 
 
@@ -26,8 +26,6 @@ TcOneShotAgent::~TcOneShotAgent(){ ; }
 
 string TcOneShotAgent::fGetCurrentDirectory() {
 	
-	
-
 	char aCurrentWorkingDirectory[FILENAME_MAX];
 	return(string(GetCurrentWorkingDirectory(aCurrentWorkingDirectory, FILENAME_MAX)));
 

@@ -17,7 +17,7 @@ private:
 public:
 
 	TcOneShotAgent();
-	TcOneShotAgent(string pCollectionName, string pDatabaseName, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pAgentID, string pAgentName, IAgent::Priority pPriority = Priority::Medium);
+	TcOneShotAgent(string pDatabaseName, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pAgentID, string pAgentName, IAgent::Priority pPriority = Priority::Medium);
 	~TcOneShotAgent();
 
 	static string fGetCurrentDirectory();

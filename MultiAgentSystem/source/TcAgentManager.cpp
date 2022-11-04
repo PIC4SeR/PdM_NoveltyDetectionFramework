@@ -12,81 +12,81 @@ using namespace std;
 
 TcAgentManager::TcAgentManager(){
 	
-	cmAgents = new list<IAgent*>();
-	cmAgentshistory = new map<IAgent*, boost::circular_buffer<TcAgentStatus*>*>();
-	cmScheduleminwaittime = chrono::microseconds(1000000);
-	cmExecutionwaittime = chrono::microseconds(1000000);
-	cmStopped.store(false);
+	this->cmAgents = new list<IAgent*>();
+	this->cmAgentshistory = new map<IAgent*, boost::circular_buffer<TcAgentStatus*>*>();
+	this->cmScheduleminwaittime = chrono::microseconds(1000000);
+	this->cmExecutionwaittime = chrono::microseconds(1000000);
+	this->cmStopped.store(false);
 }
 TcAgentManager::TcAgentManager(string managerid, string managername, chrono::microseconds schedulewaittime, chrono::microseconds executionwaittime)
 {
-	rmManagerid = managerid;
-	rmManagername = managername;
-	cmAgents = new list<IAgent*>();
-	cmAgentshistory = new map<IAgent*, boost::circular_buffer<TcAgentStatus*>*>();
-	cmScheduleminwaittime = schedulewaittime;
-	cmStopped.store(false);
+	this->rmManagerid = managerid;
+	this->rmManagername = managername;
+	this->cmAgents = new list<IAgent*>();
+	this->cmAgentshistory = new map<IAgent*, boost::circular_buffer<TcAgentStatus*>*>();
+	this->cmScheduleminwaittime = schedulewaittime;
+	this->cmStopped.store(false);
 }
 TcAgentManager::~TcAgentManager(){
 	
-	if (cmAgents != nullptr) {
-		cmAgents->clear();
+	if (this->cmAgents != nullptr) {
+		this->cmAgents->clear();
 		delete cmAgents;
 	}
 
-	if (cmAgentshistory != nullptr) {
-		cmAgentshistory->clear();
+	if (this->cmAgentshistory != nullptr) {
+		this->cmAgentshistory->clear();
 		delete cmAgentshistory;
 	}
 }
 
 void TcAgentManager::fSetExecutionWaitTime(chrono::microseconds executionwaittime)
 {
-	cmExecutionwaittime = executionwaittime;
+	this->cmExecutionwaittime = executionwaittime;
 }
 void TcAgentManager::fSetScheduleMinWaitTime(chrono::microseconds scheduleminwaittime)
 {
-	cmScheduleminwaittime = scheduleminwaittime;
+	this->cmScheduleminwaittime = scheduleminwaittime;
 }
 void TcAgentManager::fSetName(string managername)
 {
-	rmManagername = managername;
+	this->rmManagername = managername;
 }
 void TcAgentManager::fSetStopped(bool stopped)
 {
-	cmStopped.store(stopped);
+	this->cmStopped.store(stopped);
 }
 void TcAgentManager::fSetId(string managerid)
 {
-	rmManagerid = managerid;
+	this->rmManagerid = managerid;
 }
 
 string TcAgentManager::fGetId()
 {
-	return(rmManagerid);
+	return(this->rmManagerid);
 }
 bool TcAgentManager::fGetStopped()
 {
-	return(cmStopped.load());
+	return(this->cmStopped.load());
 }
 string TcAgentManager::fGetName()
 {
-	return(rmManagername);
+	return(this->rmManagername);
 }
 chrono::microseconds TcAgentManager::fGetScheduleMinWaitTime()
 {
-	return(cmScheduleminwaittime);
+	return(this->cmScheduleminwaittime);
 }
 chrono::microseconds TcAgentManager::fGetExecutionWaitTime()
 {
-	return(cmExecutionwaittime);
+	return(this->cmExecutionwaittime);
 }
 
 chrono::microseconds TcAgentManager::fSchedule(priority_queue<IAgent*>* pReadyagents) {
 	chrono::microseconds schedulewait = chrono::microseconds(cmScheduleminwaittime);
 
-	//fprintf(stdout, "(%s) Start scheduling\n", __func__);
-	//fflush(stdout);
+	fprintf(stdout, "(%s) Start scheduling\n", __func__);
+	fflush(stdout);
 
 	for (IAgent* agent : *cmAgents) {
 		if (agent->fRunnable()) {
@@ -99,15 +99,15 @@ chrono::microseconds TcAgentManager::fSchedule(priority_queue<IAgent*>* pReadyag
 		}
 	}
 
-	//fprintf(stdout, "(%s) End scheduling - next programmed scheduling in next %d sec\n", __func__, (int) chrono::duration_cast<chrono::seconds>(schedulewait).count());
-	//fflush(stdout);
+	fprintf(stdout, "(%s) End scheduling - next programmed scheduling in next %d sec\n", __func__, (int) chrono::duration_cast<chrono::seconds>(schedulewait).count());
+	fflush(stdout);
 	
 	return(schedulewait);
 }
 void TcAgentManager::fRun(priority_queue<IAgent*>* pReadyagents) {
 
-	//fprintf(stdout, "(%s) Starts Run\n", __func__);
-	//fflush(stdout);
+	fprintf(stdout, "(%s) Starts Run\n", __func__);
+	fflush(stdout);
 
 	while (!pReadyagents->empty()) {
 
@@ -121,11 +121,13 @@ void TcAgentManager::fRun(priority_queue<IAgent*>* pReadyagents) {
 		IAgent* agent = pReadyagents->top();
 
 
-		//fprintf(stdout, "============================================================================================\n");
-		//fprintf(stdout, "(%s) Agent with AgentId %s and AgentName %s is starting\n", __func__, agent->fGetId().c_str(), agent->fGetName().c_str());
-		//fflush(stdout);
+		fprintf(stdout, "============================================================================================\n");
+		fprintf(stdout, "(%s) Agent with AgentId %s and AgentName %s is starting\n", __func__, agent->fGetId().c_str(), agent->fGetName().c_str());
+		fflush(stdout);
 
-		thread* agentThread = new thread(ref(*agent), ref(p));
+		thread agentThread = thread(ref(*agent), ref(p));
+		agentThread.detach();
+		
 		future<optional<int>> f = p.get_future();
 
 		future_status status = f.wait_for(agentWait);
@@ -145,25 +147,25 @@ void TcAgentManager::fRun(priority_queue<IAgent*>* pReadyagents) {
 			agentstatus = false;
 		}
 
-		if(cmAgentshistory->find(agent) == cmAgentshistory->end()) {
+		if(this->cmAgentshistory->find(agent) == this->cmAgentshistory->end()) {
 			boost::circular_buffer<TcAgentStatus*>* agentStatusList = new boost::circular_buffer<TcAgentStatus*>();
 			agentStatusList->push_back(new TcAgentStatus(agentstatus, chrono::duration_cast<chrono::microseconds>(end - start), start));
-			cmAgentshistory->insert(make_pair(agent, agentStatusList));
+			this->cmAgentshistory->insert(make_pair(agent, agentStatusList));
 		} else {
-			cmAgentshistory->at(agent)->push_back(new TcAgentStatus(agentstatus, chrono::duration_cast<chrono::microseconds>(end - start), start));
+			this->cmAgentshistory->at(agent)->push_back(new TcAgentStatus(agentstatus, chrono::duration_cast<chrono::microseconds>(end - start), start));
 		}
 
 		pReadyagents->pop();
 		
 
-		//fprintf(stdout, "(%s) Agent with AgentId %s and AgentName %s is ending\n", __func__, agent->fGetId().c_str(), agent->fGetName().c_str());
-		//fprintf(stdout, "============================================================================================\n");
-		//fflush(stdout);
+		fprintf(stdout, "(%s) Agent with AgentId %s and AgentName %s is ending\n", __func__, agent->fGetId().c_str(), agent->fGetName().c_str());
+		fprintf(stdout, "============================================================================================\n");
+		fflush(stdout);
 						
 	}
 
-	//fprintf(stdout, "(%s) Ends Running\n", __func__);
-	//fflush(stdout);
+	fprintf(stdout, "(%s) Ends Running\n", __func__);
+	fflush(stdout);
 
 }
 void TcAgentManager::fExecute() {
@@ -175,6 +177,6 @@ void TcAgentManager::fExecute() {
 	}
 }
 void TcAgentManager::fAddAgent(IAgent* agent) {
-	cmAgents->push_back(agent);
-    cmAgentshistory->insert(make_pair(agent, new boost::circular_buffer<TcAgentStatus*>(1024)));
+	this->cmAgents->push_back(agent);
+    this->cmAgentshistory->insert(make_pair(agent, new boost::circular_buffer<TcAgentStatus*>(1024)));
 }

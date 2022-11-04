@@ -3,7 +3,6 @@
 	@author Giuseppe Pedone
 	@version 2.0 04/05/2021
 */
-#pragma once
 #ifndef TCMONGODRIVER_H
 #define TCMONGODRIVER_H
 
@@ -18,7 +17,6 @@
 #include <mongocxx/exception/exception.hpp>
 #include <mongocxx/exception/bulk_write_exception.hpp>
 #include <mongocxx/pipeline.hpp>
-#include <boost/optional.hpp>
 #include <bsoncxx/document/value.hpp>
 #include <bsoncxx/exception/exception.hpp>	
 #include <bsoncxx/document/view_or_value.hpp>
@@ -38,14 +36,10 @@
 #include <inttypes.h>
 #include <string>
 #include <list>
-#include <optional>
-
-
+#include "./TcColors.h"
 
 
 #pragma region Internal Error Codes
-constexpr int8_t kErr_ClientAcquire = -1;
-constexpr int8_t kClientAcquire_Ok = 0;
 constexpr int8_t kErr_DatabaseExist_Create = -2;
 constexpr int8_t kErr_DatabaseExist = -1;
 constexpr int8_t kDatabaseExist_Create_Ok = 0;
@@ -66,59 +60,80 @@ constexpr int8_t kErr_Insert = -4;
 constexpr int8_t kInsert_Ok = 0;
 #pragma endregion
 
+#pragma region Generic Server Error
+constexpr uint16_t SERVER_CONNECTION_ERROR = 13053;
+#pragma endregion
+
+
+
 using namespace std;
 
 
 class TcMongoDriver
 {
 	private:
+
+		class TcMongoError{
+			public:
+				class TcMongoConnection {
+        			public:
+            			static const int kNotConnected = -1;
+        		};
+				class TcMongoUri {
+        			public:
+            			static const int kNotConnected = -1;
+        		};
+				class TcMongoCursor {
+        			public:
+            			static const int kNotConnected = -1;
+        		};
+
+				class TcMongoQuery {
+        			public:
+            			static const int kSuccess = 0;
+						static const int kQueryFail = -1;
+        		};
+				class TcMongoInsert {
+        			public:
+            			static const int kSuccess = 0;
+						static const int kInsertionFails = -1;
+        		};
+        		class TcMongoClient {
+        			public:
+            			static const int kInvalidClient = -1;
+        		};
+				class TcMongoDatabase {
+        			public:
+						static const int kCreated = 1;
+						static const int kExist = 0;
+            			static const int kDoNotExist = -1;
+						static const int kIsEmpty = -2;
+						static const int kUnableToCreate = -3;
+						static const int kInvalidDatabase = -4;
+
+        		};
+				class TcMongoCollection {
+        			public:
+            			static const int kCreated = 1;
+						static const int kExist = 0;
+            			static const int kDoNotExist = -1;
+						static const int kIsEmpty = -2;
+						static const int kUnableToCreate = -3;
+						static const int kInvalidCollection = -4;
+
+        		};
+		};
+
+
+
 		#pragma region Internal class Attributes
-			inline static mongocxx::instance* cmMongoDriverInstance = new mongocxx::instance();
+			inline static mongocxx::instance cmMongoDriverInstance = mongocxx::instance();
 		#pragma endregion
 		#pragma region Internal Attributes
 				string rmMongoDriverName;
 				string rmMongoDriverRemoteConnectionType;
 				string rmMongoDriverRemoteConnectionHost;
 				uint16_t rmMongoDriverRemoteConnectionPort;
-		#pragma endregion
-		#pragma region Internal Functions
-			/**
-			* Acquire a Mongo Entry from Mongo Connection Pool.
-			*
-			* This Function try to acquire (N times) a mongocxx::pool::entry object pointer.
-			* @param[out] pOptionalMongoEntry the boost::optional<mongocxx::pool::entry> object pointer that will be returned.
-			* @returns Integer Error Code:
-			*      - kCLIENTACQUIRE_FAILS if cannot acquire a Mongo Entry.
-			*      - kCLIENTACQUIRE_SUCCESS if can acquire a Mongo Entry.
-			*/
-			int fClientAcquire(boost::optional<mongocxx::pool::entry>* pOptionalMongoEntry);
-
-			/**
-			* Verify if a the given Database exists. If it does not exists, it will be created.
-			*
-			* @param[in] pDatabase the string object that represents the Databasename to verify.
-			* @param[in] pMongoClient the mongocxx::client object that has been acquired.
-			* @returns Integer Error Code:
-			*      - kDATABASEEXIST_CREATE_FAILS if the Database does not exists and its creation fails.
-			*      - kDATABASEEXIST_CREATE_SUCCESS if the Database does not exists and its creation success.
-			*      - kDATABASEEXIST_FAILS if an exception has been thrown.
-			*      - kDATABASEEXIST_SUCCESS if the Database exists.
-			*/
-			int fDatabaseExist(string pDatabase, mongocxx::client& pMongoClient);
-
-
-			/**
-			* Verify if a the given Database exists. If it does not exists, it will be created.
-			*
-			* @param[in] pCollection the string object that represents the Databasename to verify.
-			* @param[in] pMongoDatabase the mongocxx::database object that has been acquired.
-			* @returns Integer Error Code:
-			*      - kCOLLECTIONEXIST_CREATE_FAILS if the Collection does not exists and its creation fails.
-			*      - kCOLLECTIONEXIST_CREATE_SUCCESS if the Collection does not exists and its creation success.
-			*      - kCOLLECTIONEXIST_FAILS if a mongo exception has been thrown.
-			*      - kCOLLECTIONEXIST_SUCCESS if the Collection exists.
-			*/
-			int fCollectionExist(string pCollection, mongocxx::database pMongoDatabase);
 		#pragma endregion
 
 	public:
@@ -128,14 +143,32 @@ class TcMongoDriver
 				TcMongoDriver();
 				~TcMongoDriver();
 
+				/**
+				* Verify if a the given Database exists. If it does not exists, it will be created.
+				*
+				* @param[in] pDatabase the string object that represents the Databasename to verify.
+				* @param[in] pMongoClient the mongocxx::client object that has been acquired.
+				* @returns Integer Error Code:
+				*      - kDATABASEEXIST_CREATE_FAILS if the Database does not exists and its creation fails.
+				*      - kDATABASEEXIST_CREATE_SUCCESS if the Database does not exists and its creation success.
+				*      - kDATABASEEXIST_FAILS if an exception has been thrown.
+				*      - kDATABASEEXIST_SUCCESS if the Database exists.
+				*/
+				int fDatabaseExist(string pDatabase, mongocxx::client& pMongoClient, bool pCreate = true);
+
 
 				/**
-				* Creates a Mongo Instance and a Mongo Connection Pool.
+				* Verify if a the given Database exists. If it does not exists, it will be created.
 				*
+				* @param[in] pCollection the string object that represents the Databasename to verify.
+				* @param[in] pMongoDatabase the mongocxx::database object that has been acquired.
 				* @returns Integer Error Code:
+				*      - kCOLLECTIONEXIST_CREATE_FAILS if the Collection does not exists and its creation fails.
+				*      - kCOLLECTIONEXIST_CREATE_SUCCESS if the Collection does not exists and its creation success.
+				*      - kCOLLECTIONEXIST_FAILS if a mongo exception has been thrown.
+				*      - kCOLLECTIONEXIST_SUCCESS if the Collection exists.
 				*/
-				void fDisconnect();
-
+				int fCollectionExist(string pCollection, mongocxx::database pMongoDatabase, bool pCreate = true);
 
 
 				/**
@@ -157,14 +190,14 @@ class TcMongoDriver
 		#pragma endregion
 		
 		#pragma region External Generic Functions
-			template<class T>
-			int fInsertDocument(string pDatabase, string pCollection, T pDocument);
+				template<class T>
+				int fInsertDocument(string pDatabase, string pCollection, T pDocument);
 
-			template<class T>
-			int fInsertDocumentList(string pDatabase, string pCollection, list<T> pDocuments);
+				template<class T>
+				int fInsertDocumentList(string pDatabase, string pCollection, list<T> pDocuments);
 
-			template<class T>
-			int fRunQuery(list<T>* pOutputList, string pDatabase, string pCollection, string pFilter, string pProjection, string pSortcriteria, int pSkip = 0, int pLimit = 0, string pGroupcriteria = "", string pAddfieldscriteria = "");
+				template<class T>
+				int fRunQuery(list<T>* pOutputList, string pDatabase, string pCollection, string pFilter, string pProjection, string pSortcriteria, int pSkip = 0, int pLimit = 0, string pGroupcriteria = "", string pAddfieldscriteria = "");
 		#pragma endregion
 
 };
@@ -176,65 +209,88 @@ class TcMongoDriver
 
 template<class T>
 int TcMongoDriver::fInsertDocument(string pDatabase, string pCollection, T pDocument) {
-	optional<mongocxx::pool::entry> cOptionalMongoEntry;
+	
 	mongocxx::database cMongoDatabase;
 	mongocxx::collection cMongoCollection;
 	bsoncxx::document::view_or_value cBsonDocument;
-
 	int rResult = 0;
 
-	rResult = TcMongoDriver::fClientAcquire(&cOptionalMongoEntry);
-	if (rResult == kErr_ClientAcquire) {
-		fprintf(stdout, "Client acquire fails\n");
+	string cMongoDriverRemoteConnectionString = this->rmMongoDriverRemoteConnectionType + "://" + this->rmMongoDriverRemoteConnectionHost + ":" + to_string(this->rmMongoDriverRemoteConnectionPort);
+	const mongocxx::uri& cMongoDriverConnectionUri{ bsoncxx::string::view_or_value(cMongoDriverRemoteConnectionString) };
+
+	mongocxx::client cMongoClient = mongocxx::client(cMongoDriverConnectionUri);
+	if (!cMongoClient) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Mongo client invalid" ANSI_COLOR_RESET "\n", __func__);
 		fflush(stdout);
-		return(kErr_Insert_ClientAcquire);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(TcMongoError::TcMongoClient::kInvalidClient);
 	}
 
-	mongocxx::client& cMongoClient = **cOptionalMongoEntry;
 
-	rResult = TcMongoDriver::fDatabaseExist(pDatabase, cMongoClient);
-	if (rResult == kErr_DatabaseExist_Create) {
-		fprintf(stdout, "Database %s not exist, creation fails\n", pDatabase.c_str());
+	if ((rResult = fDatabaseExist(pDatabase, cMongoClient)) < 0) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database exist fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
 		fflush(stdout);
-		return(kErr_Insert_DatabaseExist);
-	}
-	else if (rResult == kErr_DatabaseExist) {
-		fprintf(stdout, "Database %s not exist, creation fails\n", pDatabase.c_str());
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
 		fflush(stdout);
-		return(kErr_Insert_DatabaseExist);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(rResult);
 	}
 
 	cMongoDatabase = cMongoClient[pDatabase];
-	rResult = TcMongoDriver::fCollectionExist(pCollection, cMongoDatabase);
-	if (rResult == kErr_CollectionExist_Create) {
-		fprintf(stdout, "Collection %s not exist, creation fails\n", pCollection.c_str());
+	if (!cMongoDatabase) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Mongo database invalid" ANSI_COLOR_RESET "\n", __func__);
 		fflush(stdout);
-		return(kErr_Insert_CollectionExist);
-	}
-	else if (rResult == kErr_CollectionExist) {
-		fprintf(stdout, "Collection %s not exist, creation fails\n", pCollection.c_str());
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
 		fflush(stdout);
-		return(kErr_Insert_CollectionExist);
+		return(TcMongoError::TcMongoDatabase::kInvalidDatabase);
 	}
 
+
+	if ((rResult = fCollectionExist(pCollection, cMongoDatabase)) < 0) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection exist fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(rResult);
+	}
+	
 	cMongoCollection = cMongoDatabase[pCollection];
+	if (!cMongoCollection) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Mongo collection invalid" ANSI_COLOR_RESET "\n", __func__);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(TcMongoError::TcMongoCollection::kInvalidCollection);
+	}
 
 
 	try {
 		cBsonDocument = T::fSerializeObjectBsonValue(pDocument);
 	}
-	catch (mongocxx::query_exception e) {
-		fprintf(stdout, "Catched exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+	catch (mongocxx::query_exception qe) {
+		fprintf(stdout, "Catched exception - Message %s Value %d Category %s\n", qe.code().message().c_str(), qe.code().value(), qe.code().category().name());
 		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		throw qe;
 	}
 
 	try {
-		boost::optional<mongocxx::result::insert_one> cResult = cMongoCollection.insert_one(cBsonDocument);
+		auto cResult = cMongoCollection.insert_one(cBsonDocument);
 		if (!cResult) {
-			return(kErr_Insert);
-		}
-		else {
-			return(kInsert_Ok);
+			fprintf(stdout, "(%s) Insertion fails\n", __func__);
+			fflush(stdout);
+			fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+			fflush(stdout);
+			return(TcMongoError::TcMongoInsert::kInsertionFails);
+		} else {
+			fprintf(stdout, "(%s) Insertion success\n", __func__, __func__);
+			fflush(stdout);
+			fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+			fflush(stdout);
+			return(TcMongoError::TcMongoInsert::kSuccess);
 		}
 	}
 	catch (mongocxx::bulk_write_exception e) {
@@ -251,49 +307,62 @@ int TcMongoDriver::fInsertDocument(string pDatabase, string pCollection, T pDocu
 
 template<class T>
 int TcMongoDriver::fInsertDocumentList(string pDatabase, string pCollection, list<T> pDocuments) {
-	optional<mongocxx::pool::entry> cOptionalMongoEntry;
+	
 	mongocxx::database cMongoDatabase;
 	mongocxx::collection cMongoCollection;
 	bsoncxx::document::view_or_value cBsonDocument;
 	list<bsoncxx::document::view_or_value> cBsonDocuments;
-
 	int rResult = 0;
 
-	rResult = TcMongoDriver::fClientAcquire(&cOptionalMongoEntry);
-	if (rResult == kErr_ClientAcquire) {
-		fprintf(stdout, "Client acquire fails\n");
+	string cMongoDriverRemoteConnectionString = this->rmMongoDriverRemoteConnectionType + "://" + this->rmMongoDriverRemoteConnectionHost + ":" + to_string(this->rmMongoDriverRemoteConnectionPort);
+	const mongocxx::uri& cMongoDriverConnectionUri{ bsoncxx::string::view_or_value(cMongoDriverRemoteConnectionString) };
+
+	mongocxx::client cMongoClient = mongocxx::client(cMongoDriverConnectionUri);
+	if (!cMongoClient) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Mongo client invalid" ANSI_COLOR_RESET "\n", __func__);
 		fflush(stdout);
-		return(kErr_Insert_ClientAcquire);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(TcMongoError::TcMongoClient::kInvalidClient);
 	}
 
-	mongocxx::client& cMongoClient = **cOptionalMongoEntry;
 
-	rResult = TcMongoDriver::fDatabaseExist(pDatabase, cMongoClient);
-	if (rResult == kErr_DatabaseExist_Create) {
-		fprintf(stdout, "Database %s not exist, creation fails\n", pDatabase.c_str());
+	if ((rResult = fDatabaseExist(pDatabase, cMongoClient)) < 0) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database exist fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
 		fflush(stdout);
-		return(kErr_Insert_DatabaseExist);
-	}
-	else if (rResult == kErr_DatabaseExist) {
-		fprintf(stdout, "Database %s not exist, creation fails\n", pDatabase.c_str());
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
 		fflush(stdout);
-		return(kErr_Insert_DatabaseExist);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(rResult);
 	}
 
 	cMongoDatabase = cMongoClient[pDatabase];
-	rResult = TcMongoDriver::fCollectionExist(pCollection, cMongoDatabase);
-	if (rResult == kErr_CollectionExist_Create) {
-		fprintf(stdout, "Collection %s not exist, creation fails\n", pCollection.c_str());
+	if (!cMongoDatabase) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Mongo database invalid" ANSI_COLOR_RESET "\n", __func__);
 		fflush(stdout);
-		return(kErr_Insert_CollectionExist);
-	}
-	else if (rResult == kErr_CollectionExist) {
-		fprintf(stdout, "Collection %s not exist, creation fails\n", pCollection.c_str());
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
 		fflush(stdout);
-		return(kErr_Insert_CollectionExist);
+		return(TcMongoError::TcMongoDatabase::kInvalidDatabase);
 	}
 
+
+	if ((rResult = fCollectionExist(pCollection, cMongoDatabase)) < 0) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection exist fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(rResult);
+	}
+	
 	cMongoCollection = cMongoDatabase[pCollection];
+	if (!cMongoCollection) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Mongo collection invalid" ANSI_COLOR_RESET "\n", __func__);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(TcMongoError::TcMongoCollection::kInvalidCollection);
+	}
 
 
 	for (T cDocument : pDocuments) {
@@ -304,25 +373,38 @@ int TcMongoDriver::fInsertDocumentList(string pDatabase, string pCollection, lis
 		catch (mongocxx::query_exception e) {
 			fprintf(stdout, "Catched exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
 			fflush(stdout);
+			fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+			fflush(stdout);
 		}
 	}
 
 	try {
-		boost::optional<mongocxx::result::insert_many> cResult = cMongoCollection.insert_many(cBsonDocuments);
+		auto cResult = cMongoCollection.insert_many(cBsonDocuments);
 		if (!cResult) {
-			return(kErr_Insert);
-		}
-		else {
-			return(kInsert_Ok);
+			fprintf(stdout, "(%s) Insertion fails\n", __func__);
+			fflush(stdout);
+			fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+			fflush(stdout);
+			return(TcMongoError::TcMongoInsert::kInsertionFails);
+		} else {
+			fprintf(stdout, "(%s) Insertion success\n", __func__, __func__);
+			fflush(stdout);
+			fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+			fflush(stdout);
+			return(TcMongoError::TcMongoInsert::kSuccess);
 		}
 	}
 	catch (mongocxx::bulk_write_exception e) {
 		printf("Catched exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
 		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
 		return(kErr_Insert);
 	}
 	catch (mongocxx::exception e) {
 		fprintf(stdout, "Catched exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
 		fflush(stdout);
 		return(kErr_Insert);
 	}
@@ -330,7 +412,6 @@ int TcMongoDriver::fInsertDocumentList(string pDatabase, string pCollection, lis
 
 template<class T>
 int TcMongoDriver::fRunQuery(list<T>* pOutputList, string pDatabase, string pCollection, string pFilter, string pProjection, string pSortcriteria, int pSkip, int pLimit, string pGroupcriteria, string pAddfieldscriteria) {
-	optional<mongocxx::pool::entry> cOptionalMongoEntry;
 	mongocxx::database cMongoDatabase;
 	mongocxx::collection cMongoCollection;
 	bsoncxx::document::view_or_value cQueryFilter;
@@ -342,43 +423,56 @@ int TcMongoDriver::fRunQuery(list<T>* pOutputList, string pDatabase, string pCol
 	list<T> cOutputList;
 	int rResult = 0;
 
+	string cMongoDriverRemoteConnectionString = this->rmMongoDriverRemoteConnectionType + "://" + this->rmMongoDriverRemoteConnectionHost + ":" + to_string(this->rmMongoDriverRemoteConnectionPort);
+	const mongocxx::uri& cMongoDriverConnectionUri{ bsoncxx::string::view_or_value(cMongoDriverRemoteConnectionString) };
 
-
-	rResult = TcMongoDriver::fClientAcquire(&cOptionalMongoEntry);
-	if (rResult == kErr_ClientAcquire) {
-		fprintf(stdout, "Client acquire fails\n");
+	mongocxx::client cMongoClient = mongocxx::client(cMongoDriverConnectionUri);
+	if (!cMongoClient) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Mongo client invalid" ANSI_COLOR_RESET "\n", __func__);
 		fflush(stdout);
-		return(kErr_Insert_ClientAcquire);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(TcMongoError::TcMongoClient::kInvalidClient);
 	}
 
-	mongocxx::client& cMongoClient = **cOptionalMongoEntry;
 
-	rResult = TcMongoDriver::fDatabaseExist(pDatabase, cMongoClient);
-	if (rResult == kErr_DatabaseExist_Create) {
-		fprintf(stdout, "Database %s not exist, creation fails\n", pDatabase.c_str());
+	if ((rResult = fDatabaseExist(pDatabase, cMongoClient)) < 0) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database exist fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
 		fflush(stdout);
-		return(kErr_DatabaseExist_Create);
-	}
-	else if (rResult == kErr_DatabaseExist) {
-		fprintf(stdout, "Database %s not exist, creation fails\n", pDatabase.c_str());
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
 		fflush(stdout);
-		return(kErr_DatabaseExist);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(rResult);
 	}
 
 	cMongoDatabase = cMongoClient[pDatabase];
-	rResult = TcMongoDriver::fCollectionExist(pCollection, cMongoDatabase);
-	if (rResult == kErr_CollectionExist_Create) {
-		fprintf(stdout, "Collection %s not exist, creation fails\n", pCollection.c_str());
+	if (!cMongoDatabase) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Mongo database invalid" ANSI_COLOR_RESET "\n", __func__);
 		fflush(stdout);
-		return(kErr_Insert_CollectionExist);
-	}
-	else if (rResult == kErr_CollectionExist) {
-		fprintf(stdout, "Collection %s not exist, creation fails\n", pCollection.c_str());
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
 		fflush(stdout);
-		return(kErr_CollectionExist);
+		return(TcMongoError::TcMongoDatabase::kInvalidDatabase);
 	}
 
+
+	if ((rResult = fCollectionExist(pCollection, cMongoDatabase)) < 0) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection exist fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(rResult);
+	}
+	
 	cMongoCollection = cMongoDatabase[pCollection];
+	if (!cMongoCollection) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Mongo collection invalid" ANSI_COLOR_RESET "\n", __func__);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(TcMongoError::TcMongoCollection::kInvalidCollection);
+	}
+
 	if (pFilter != "") {
 		cQueryFilter = bsoncxx::from_json(pFilter);
 		cQueryPipeline.match(cQueryFilter);
@@ -410,9 +504,7 @@ int TcMongoDriver::fRunQuery(list<T>* pOutputList, string pDatabase, string pCol
 
 		mongocxx::options::aggregate cAggregateOptions;
 		cAggregateOptions.allow_disk_use(true);
-
 		mongocxx::cursor cMongoCursor = cMongoCollection.aggregate(cQueryPipeline, cAggregateOptions);
-
 
 		for (bsoncxx::document::view cBsonDocument : cMongoCursor) {
 			try {
@@ -423,17 +515,21 @@ int TcMongoDriver::fRunQuery(list<T>* pOutputList, string pDatabase, string pCol
 			catch (bsoncxx::exception be) {
 				fprintf(stdout, "Catched exception - Message %s Value %d Category %s\n", be.code().message().c_str(), be.code().value(), be.code().category().name());
 				fflush(stdout);
-				return(-1);
+				fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+				fflush(stdout);
+				throw be;
 			}
 		}
 
 		*pOutputList = cOutputList;
-		return(0);
+		return(TcMongoError::TcMongoQuery::kSuccess);
 	}
-	catch (mongocxx::query_exception e) {
-		fprintf(stdout, "Catched exception - Message %s Value %d Category %s\n", e.code().message().c_str(), e.code().value(), e.code().category().name());
+	catch (mongocxx::query_exception qe) {
+		fprintf(stdout, "Catched exception - Message %s Value %d Category %s\n", qe.code().message().c_str(), qe.code().value(), qe.code().category().name());
 		fflush(stdout);
-		return(-1);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		throw qe;
 	}
 }
 

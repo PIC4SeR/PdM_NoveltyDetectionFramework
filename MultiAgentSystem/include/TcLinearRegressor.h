@@ -1,4 +1,4 @@
-#pragma once
+
 
 #ifndef TCLINEARREGRESSOR_H
 #define TCLINEARREGRESSOR_H
@@ -17,13 +17,9 @@ using namespace std;
 template <class x, class y>
 class TcLinearRegressor {
     private:
-        vector<x> rmX;
-        vector<y> rmY;
-    
-    public:
         double rmQ;
-        double rmM;
-        double AvTime;
+        double rmM;    
+    public:
     class TcError {
     public:
         class TcPrediction {
@@ -50,6 +46,7 @@ class TcLinearRegressor {
     ~TcLinearRegressor() {}
 
     int fTrain(vector<x> pX, vector<y> pY) {
+        
         using boost::math::statistics::simple_ordinary_least_squares;
         using boost::math::statistics::mean;
 
@@ -66,16 +63,16 @@ class TcLinearRegressor {
         double meanT1 = mean(subTime1);
         double meanT2 = mean(subTime2);
 
-        vector<double> xFinal{ mean2, mean1 };
-        vector<double> yFinal{ meanT2,meanT1 };
+        list<double> xFinal{ mean2, mean1 };
+        list<double> yFinal{ meanT2,meanT1 };
 
-        auto [c0, c1] = simple_ordinary_least_squares(yFinal, xFinal);
+        auto [c0, c1] = simple_ordinary_least_squares(xFinal, yFinal);
 
         this->rmM = c1;
         this->rmQ = c0;
-        this->AvTime = meanT2;
 
-        /*double sumX = 0;
+/*
+        double sumX = 0;
         double sumX2 = 0;
         double sumY = 0;
         double sumXY = 0;
@@ -89,27 +86,23 @@ class TcLinearRegressor {
             return(TcError::TcTraining::kErr_InvalidDataSize);
         }
 
-        int n = pX.size();
-
         for(int i=0;i<n;i++){
             sumX = sumX + pX[i];
             sumX2 = sumX2 + pX[i]*pX[i];
             sumY = sumY + pY[i];
             sumXY = sumXY + pX[i] * ((x) pY[i]);
-        }*/
+        }
 
-        /* Calculating a and b */
-        //this->rmM = (double) (n*sumXY-sumX*sumY)/(n*sumX2-sumX*sumX);
-        //this->rmQ = (double) (sumY - this->rmM*sumX)/n;
-        
-        /*fprintf(stdout, "(%s) Calculated value of q is %f and m is %f\n", __func__, this->rmQ, this->rmM);
-		fflush(stdout);
+        // Calculating a and b
+        this->rmM = (double) (n*sumXY-sumX*sumY)/(n*sumX2-sumX*sumX);
+        this->rmQ = (double) (sumY - this->rmM*sumX)/n;
 
+*/
         fprintf(stdout, "(%s) Equation of best fit is: y = %f + %fx\n", __func__, this->rmQ, this->rmM);
 		fflush(stdout);
 
         fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
-	    fflush(stdout);*/
+	    fflush(stdout);
         
         return(TcError::TcTraining::kValidTraining);
     }
@@ -124,6 +117,30 @@ class TcLinearRegressor {
 	    fflush(stdout);
 
     }
+    double fGetM(){
+        fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	    fflush(stdout);
+        
+        double rM = this->rmM;
+
+        fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+	    fflush(stdout);
+        return(rM);
+
+    }
+    double fGetQ(){
+        fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	    fflush(stdout);
+        
+        double rQ = this->rmQ;
+
+        fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+	    fflush(stdout);
+        return(rQ);
+
+    }    
+
+    
 };
 
 

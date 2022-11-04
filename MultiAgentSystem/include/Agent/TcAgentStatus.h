@@ -6,18 +6,7 @@
 #include <string>
 #include <chrono>
 
-
-
-
-
-
-
 		using namespace std;
-
-
-
-
-
 
 		class TcAgentStatus {
 

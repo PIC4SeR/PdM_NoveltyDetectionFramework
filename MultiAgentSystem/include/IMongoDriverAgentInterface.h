@@ -33,7 +33,10 @@ class IMongoDriverAgentInterface
 
 	TcMongoDriver* fGetDriver();
 
-	int fGetData(list<string>* pOutput, string pDatabase, string pCollection, string pFilterattribute = "", string pFiltervalue = "", string pSortattribute = "", int pLimit = 0, int pSkip = 0, string pGroupattribute = "", list<string> pProjectionattributes = std::list<string>({""}));
+	int fGetLastErrors(list<double> *pErrors, list<long long> *pTimes, string pErrorType, string pDatabase, string pCollection, string pFilterattribute = "", string pFiltervalue = "", string pSortattribute = "", int pLimit = 0, int pSkip = 0, string pGroupattribute = "", list<string> pProjectionattributes = std::list<string>({""}));
+	int fInsertPrediction(string pDatabase, string pCollection, chrono::system_clock::time_point pAgentStartTime, long long pLastErrorTime, double pLastError, long long pPrediction, double pMcoefficient, double pQoffset, chrono::system_clock::time_point pStartTrainTime, chrono::system_clock::time_point pEndTrainTime, chrono::system_clock::time_point pEndPredictionTime, chrono::system_clock::time_point pPredictedTimeOfError, chrono::milliseconds pPredictedTimeToError, int pPredictor);
+	
+	
 	int fGetDataMaxOf(string* pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pMaxattribute, string pGroupattribute = "", string pProjectionattribute = "");
 	int fGetDataMinOf(string* pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pMinattribute, string pGroupattribute = "", string pProjectionattribute = "");
 	int fGetDataAvgOf(string* pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pAvgattribute, string pGroupattribute = "", string pProjectionattribute = "");

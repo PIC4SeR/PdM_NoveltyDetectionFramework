@@ -3,66 +3,71 @@
 #include <thread>
 
 #include "../include/TcAgentSystem.h"
-#include "../include/TcLinearRegressor.h"
-#include "../include/Agent/TcAgent.h"
-#include "../include/Agent/ThresholdsAgent/TcThresholdsAgent.h"
 #include "../include/Agent/ErrorDegradationTimeEstimatorAgent/TcErrorDegradationTimeEstimator.h"
 
 using namespace std;
 
 TcAgentSystem::TcAgentSystem(string pSystemid, string pSystemname) {
-	rmSystemid = pSystemid;
-	rmSystemname = pSystemname;
-	cmManager = new TcAgentManager();
+	this->rmSystemid = pSystemid;
+	this->rmSystemname = pSystemname;
+	this->cmManager = new TcAgentManager();
 }
 TcAgentSystem::~TcAgentSystem() {
-	if (cmManager != nullptr){
-		delete cmManager;
+	if (this->cmManager != nullptr){
+		delete this->cmManager;
 	}
 }
 void TcAgentSystem::fExecuteManager() {
-	cmManager->fExecute();
+	this->cmManager->fExecute();
 }
 void TcAgentSystem::fStopManager() {
-	cmManager->fSetStopped(true);
+	this->cmManager->fSetStopped(true);
 }
 void TcAgentSystem::fLoadManager(string pManagerid, string pManagername, chrono::microseconds pScheduleminwaittime, chrono::microseconds pExecutionwaittime) {
-	cmManager->fSetId(pManagerid);
-	cmManager->fSetName(pManagername);
-	cmManager->fSetScheduleMinWaitTime(pScheduleminwaittime);
-	cmManager->fSetExecutionWaitTime(pExecutionwaittime);
+	this->cmManager->fSetId(pManagerid);
+	this->cmManager->fSetName(pManagername);
+	this->cmManager->fSetScheduleMinWaitTime(pScheduleminwaittime);
+	this->cmManager->fSetExecutionWaitTime(pExecutionwaittime);
 }
 void TcAgentSystem::fLoadAgent(IAgent* pAgent) {
-	cmManager->fAddAgent(pAgent);
+	this->cmManager->fAddAgent(pAgent);
 }
 void TcAgentSystem::fSetName(string pSystemname)
 {
-	rmSystemname = pSystemname;
+	this->rmSystemname = pSystemname;
 }
+
 void TcAgentSystem::fSetId(string pSystemid)
 {
-	rmSystemid = pSystemid;
+	this->rmSystemid = pSystemid;
 }
+
 void TcAgentSystem::fSetManager(TcAgentManager* pManager)
 {
-	cmManager = pManager;
+	this->cmManager = pManager;
 }
+
 TcAgentManager* TcAgentSystem::fGetManager()
 {
-	return(cmManager);
+	return(this->cmManager);
 }
+
+
 string TcAgentSystem::fGetId()
 {
-	return(rmSystemid);
+	return(this->rmSystemid);
 }
+
 string TcAgentSystem::fGetName()
 {
-	return(rmSystemname);
+	return(this->rmSystemname);
 }
+
 void TcAgentSystem::fStartManager(thread* pManagerThread) {
 	*pManagerThread = thread(&TcAgentSystem::fExecuteManager, this);
 	return;
 }
+
 void TcAgentSystem::fWaitManager(thread* pManagerThread) {
 	try{
 
@@ -91,28 +96,16 @@ int main()
 	string rMongoDBConnectionType = "mongodb";
 	string rMongoDBConnectionHost = "127.0.0.1";
 	uint16_t rMongoDBConnectionPort = 27017;
-	
-	string rMongoDBDatabasename = "InfoDB";
-	string rMongoDBCollectionname = "LOW";
 
 	TcAgentSystem* system = new TcAgentSystem("S - 0", "System - 0");
 	system->fLoadManager("AM0", "Agent Manager", chrono::microseconds(10000), chrono::microseconds(50000000000000));
 	
-	for (int i = 1; i < 120; i++)
+	for (int i = 1; i < 40; i++)
 	{
-		system->fLoadAgent(new TcErrorDegradationTimeEstimator(4, i, "MAE", 40, 1, 3000, 4, 
-			chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)), rMongoDBDatabasename, 
-			rMongoDBCollectionname, rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort,
-			string("MSE-DTE"), string("MSE-Degradation-Time-Estimator"), chrono::microseconds(10000)));
+		system->fLoadAgent(new TcErrorDegradationTimeEstimator(15, i, "MAE", 150, 15, 3000, 15, 
+			chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)),  string("TR"), string("PR"), string("InfoDB"), rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort,
+			string("MAE-DTE") + to_string(i), string("MAE-Degradation-Time-Estimator") + to_string(i), chrono::microseconds(1000000)));
 	}
-	/*
-	
-	system->fLoadAgent(new TcErrorDegradationTimeEstimator(10, 1, "MAE", 5000, 30, 3000, 5, chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)), rMongoDBDatabasename, rMongoDBCollectionname, rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort,
-		string("MAE-DTE"), string("MAE-Degradation-Time-Estimator"), chrono::microseconds(1000000)));
-
-	system->fLoadAgent(new TcErrorDegradationTimeEstimator(10, 1, "RMSE", 5000, 30, 3000, 5, chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)), rMongoDBDatabasename, rMongoDBCollectionname, rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort,
-		string("RMSE-DTE"), string("RMSE-Degradation-Time-Estimator"), chrono::microseconds(1000000)));
-	*/
 
 	try{
 		thread cManagerThread;

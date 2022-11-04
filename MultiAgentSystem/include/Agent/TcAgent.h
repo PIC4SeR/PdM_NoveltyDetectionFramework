@@ -7,7 +7,6 @@
 #include <chrono>
 
 #include "IAgent.h"
-#include "../INotifyDriverAgentInterface.h"
 #include "../IMongoDriverAgentInterface.h"
 
 
@@ -24,24 +23,17 @@ protected:
 	constexpr static const int8_t kRunSuccess = 0;
 
 	IMongoDriverAgentInterface* cmMongoInterface;
-	INotifyDriverAgentInterface* cmNotifierInterface;
 	string rmDatabaseName;
-	string rmCollectionName;
 
 
 public:
 
 	TcAgent();
-	TcAgent(string pDatabaseName, string pCollectionName, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pAgentID, string pAgentName, chrono::microseconds pStepRunTime = chrono::microseconds(0), chrono::time_point<chrono::high_resolution_clock> pNextRunTime = chrono::high_resolution_clock::now(), Priority pPriority = Priority::Medium, bool pStopped = false);
+	TcAgent(string pDatabaseName, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pAgentID, string pAgentName, chrono::microseconds pStepRunTime = chrono::microseconds(0), chrono::time_point<chrono::high_resolution_clock> pNextRunTime = chrono::high_resolution_clock::now(), Priority pPriority = Priority::Medium, bool pStopped = false);
 	~TcAgent();
 	virtual int fRun();
-	int fNotifyMessage(string pType, string pTitle, string pBody);
 
 	string fGetDatabasename();
-	string fGetCollectionName();
-
-
-	void fSetCollectionName(string pCollectionName);
 	void fSetDatabasename(string pDatabaseName);
 
 };

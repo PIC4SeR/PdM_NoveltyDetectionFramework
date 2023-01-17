@@ -8,6 +8,8 @@
 #include "../include/TcMongoDriver.h"
 #include "../include/Agent/ErrorDegradationTimeEstimatorAgent/TcErrorDegradationTimeEstimator.h"
 
+
+
 IMongoDriverAgentInterface::IMongoDriverAgentInterface(string pMongoDriverName, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort){
     this->cmMongoDriver = new TcMongoDriver(pMongoDriverName, pMongoDriverRemoteConnectionType, pMongoDriverRemoteConnectionHost, pMongoDriverRemoteConnectionPort);
 }
@@ -86,6 +88,7 @@ int IMongoDriverAgentInterface::fGetLastErrors(list<double> *pErrors, list<long 
 		bsoncxx::document::value rError = bsoncxx::from_json(rStringError);
 		double rErrorValue = rError.view()[TcErrorDegradationTimeEstimator::kErrorsAttribute][pErrorType].get_double().value;
 		rErrors.push_back(rErrorValue);
+
 		rTimes.push_back(rError.view()[TcErrorDegradationTimeEstimator::kLastTestTimeAttribute].get_date().value.count());
 	}
 
@@ -124,6 +127,100 @@ int IMongoDriverAgentInterface::fInsertPrediction(string pDatabase, string pColl
         return(kInsert_Ok);
 }
 
+int IMongoDriverAgentInterface::fGetLastConfiguration(string pDatabase, string pCollection, string pSortattribute, string pAgentId, int *pNumSamplesRead, unsigned int *pPredictor, string *pPredictedErrorType, double *pPredictedErrorValue, double *pMinOperativeThresholdError, double *pMaxOperativeThresholdError, int *pMinNumOfRegrSamples, chrono::milliseconds *pPreventionThresholdTime, string *pTestResultCollection, string *pPredictionResultCollection, string *pConfigurationCollection, string *pDatabaseName, string *pMongoDriverRemoteConnectionType, string *pMongoDriverRemoteConnectionHost, uint16_t *pMongoDriverRemoteConnectionPort, string *pAgentID, string *pAgentname, chrono::microseconds *pStepRunTime, chrono::time_point<chrono::high_resolution_clock> *pNextRunTime, int *pPriority, atomic<bool> *pStopped)
+{
+    int rNumSamplesRead = 0;
+    unsigned int rPredictor = 0;
+    string rPredictedErrorType = "";
+    double rPredictedErrorValue = 0.00;
+    double rMinOperativeThresholdError = 0.00;
+    double rMaxOperativeThresholdError = 0.00;
+    int rMinNumOfRegrSamples = 0;
+    chrono::milliseconds cPreventionThresholdTime;
+    string rTestResultCollection = "";
+    string rPredictionResultCollection = "";
+    string rDatabaseName = "";
+    string rMongoDriverRemoteConnectionType = "";
+    string rMongoDriverRemoteConnectionHost = "";
+    uint16_t rMongoDriverRemoteConnectionPort;
+    string rAgentID = "";
+    string rAgentname = "";
+    chrono::microseconds cStepRunTime;
+    chrono::time_point<chrono::high_resolution_clock> cNextRunTime;
+    int rPriority = 0;
+    bool rStopped = false;
+
+    list<string> cOutputList;
+    list<long long> rTimes;
+	list<double> rErrors;
+	int rResult = 0;
+    
+    string rSortString = "";
+
+    fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+
+    if (pSortattribute == "") {
+        rSortString = "";
+    } else {
+        rSortString = "{ \"" + pSortattribute + "\" : -1 }";
+    }
+        
+
+	rResult = this->cmMongoDriver->fRunQuery(&cOutputList, pDatabase, pCollection,
+									    "",
+										"",
+										rSortString,
+                                        0,
+										1
+	);
+
+    if (rResult < 0) {
+        return(IMongoDriverAgentInterface::kGetConfigurationFails);
+    }
+
+    for(string rConfiguration : cOutputList) {
+
+		bsoncxx::document::value cConfiguration = bsoncxx::from_json(rConfiguration);
+
+        *pTestResultCollection = string(cConfiguration.view()[TcErrorDegradationTimeEstimator::kTestResultCollection].get_utf8().value.to_string());
+        *pConfigurationCollection = string(cConfiguration.view()[TcErrorDegradationTimeEstimator::kConfigurationCollection].get_utf8().value.to_string());
+
+        auto cAgentConfiguration = cConfiguration.view()[TcErrorDegradationTimeEstimator::kConfigurationAgents][pAgentId];
+
+        if (cAgentConfiguration){
+            *pNumSamplesRead = cAgentConfiguration[TcErrorDegradationTimeEstimator::kNumSamplesRead].get_int32().value;
+            
+            *pPredictor = (unsigned int) cAgentConfiguration[TcErrorDegradationTimeEstimator::kAgentPredictor].get_int32().value;
+            *pPredictedErrorType = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPredictedErrorType].get_utf8().value.to_string());
+            
+            auto m = cAgentConfiguration[TcErrorDegradationTimeEstimator::kMinOpeThresholdError].get_double().value;
+                          
+            *pMinOperativeThresholdError = (double) cAgentConfiguration[TcErrorDegradationTimeEstimator::kMinOpeThresholdError].get_double().value;
+            *pMaxOperativeThresholdError = cAgentConfiguration[TcErrorDegradationTimeEstimator::kMaxOpeThresholdError].get_double().value;
+            *pMinNumOfRegrSamples = cAgentConfiguration[TcErrorDegradationTimeEstimator::kkMinNumRegrSamples].get_int32().value;
+            *pPredictedErrorValue = cAgentConfiguration[TcErrorDegradationTimeEstimator::kPredictedErrorValue].get_double().value;
+
+            *pPreventionThresholdTime = chrono::milliseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPreventionThresholdTime].get_int64().value);
+            *pPredictionResultCollection = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPredictionResultCollection].get_utf8().value.to_string());
+            *pDatabaseName = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kDatabaseName].get_utf8().value.to_string());
+            *pMongoDriverRemoteConnectionType = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kMongoDriverRemoteConnectionType].get_utf8().value.to_string());
+            *pMongoDriverRemoteConnectionHost = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kMongoDriverRemoteConnectionHost].get_utf8().value.to_string());
+            *pMongoDriverRemoteConnectionPort = cAgentConfiguration[TcErrorDegradationTimeEstimator::kMongoDriverRemoteConnectionPort].get_int32().value;
+            *pAgentID = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kAgentId].get_utf8().value.to_string());
+            *pAgentname = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kAgentName].get_utf8().value.to_string());
+            *pStepRunTime = chrono::milliseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kStepRunTime].get_int32().value);
+            *pNextRunTime = chrono::system_clock::now();
+            *pPriority = cAgentConfiguration[TcErrorDegradationTimeEstimator::kPriority].get_int32().value;
+            (*pStopped).store(cAgentConfiguration[TcErrorDegradationTimeEstimator::kStopped].get_bool().value);
+        }
+        else {
+            return(IMongoDriverAgentInterface::kGetConfigurationFails);        
+        }
+	}
+
+    return(IMongoDriverAgentInterface::kGetConfigurationSuccess);
+}
 
 int IMongoDriverAgentInterface::fGetDataMaxOf(string *pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pMaxattribute, string pGroupattribute, string pProjectionattribute){
 	list<string> cOutputList;

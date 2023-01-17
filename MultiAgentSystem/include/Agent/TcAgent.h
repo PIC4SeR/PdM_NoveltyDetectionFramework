@@ -24,6 +24,10 @@ protected:
 
 	IMongoDriverAgentInterface* cmMongoInterface;
 	string rmDatabaseName;
+	string rmMongoDriverRemoteConnectionType;
+	string rmMongoDriverRemoteConnectionHost;
+	uint16_t rmMongoDriverRemoteConnectionPort;
+
 
 
 public:

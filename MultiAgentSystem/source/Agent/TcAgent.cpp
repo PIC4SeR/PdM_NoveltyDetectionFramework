@@ -14,6 +14,9 @@ TcAgent::TcAgent() {
 }
 TcAgent::TcAgent(string pDatabaseName, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pAgentID, string pAgentName, chrono::microseconds pStepRunTime, chrono::time_point<chrono::high_resolution_clock> pNextRunTime, IAgent::Priority pPriority, bool pStopped) : IAgent(pAgentID, pAgentName, pStepRunTime, pNextRunTime, pPriority, pStopped) {
 	this->rmDatabaseName = pDatabaseName;
+	this->rmMongoDriverRemoteConnectionType = pMongoDriverRemoteConnectionType;
+	this->rmMongoDriverRemoteConnectionHost = pMongoDriverRemoteConnectionHost;
+	this->rmMongoDriverRemoteConnectionPort = pMongoDriverRemoteConnectionPort;
 	this->cmMongoInterface = new IMongoDriverAgentInterface("Agent DB Application Interface", pMongoDriverRemoteConnectionType, pMongoDriverRemoteConnectionHost, pMongoDriverRemoteConnectionPort);
 }
 

@@ -24,6 +24,8 @@ class IMongoDriverAgentInterface
 	constexpr const static int8_t kQueryFails = -2;
 	constexpr const static int8_t kGetSuccess = 0;
 	constexpr const static int8_t kConnectionSuccess = 0;
+	constexpr const static int8_t kGetConfigurationSuccess = 0;
+	constexpr const static int8_t kGetConfigurationFails = -3;
 	#pragma endregion
 
 	#pragma region External Functions
@@ -35,8 +37,9 @@ class IMongoDriverAgentInterface
 
 	int fGetLastErrors(list<double> *pErrors, list<long long> *pTimes, string pErrorType, string pDatabase, string pCollection, string pFilterattribute = "", string pFiltervalue = "", string pSortattribute = "", int pLimit = 0, int pSkip = 0, string pGroupattribute = "", list<string> pProjectionattributes = std::list<string>({""}));
 	int fInsertPrediction(string pDatabase, string pCollection, chrono::system_clock::time_point pAgentStartTime, long long pLastErrorTime, double pLastError, long long pPrediction, double pMcoefficient, double pQoffset, chrono::system_clock::time_point pStartTrainTime, chrono::system_clock::time_point pEndTrainTime, chrono::system_clock::time_point pEndPredictionTime, chrono::system_clock::time_point pPredictedTimeOfError, chrono::milliseconds pPredictedTimeToError, int pPredictor);
+	int fGetLastConfiguration(string pDatabase, string pCollection, string pSortattribute, string pAgentId, int *pNumSamplesRead, unsigned int *pPredictor, string *pPredictedErrorType, double *pPredictedErrorValue, double *pMinOperativeThresholdError, double *pMaxOperativeThresholdError, int *pMinNumOfRegrSamples, chrono::milliseconds *pPreventionThresholdTime, string *pTestResultCollection, string *pPredictionResultCollection, string *pConfigurationCollection, string *pDatabaseName, string *pMongoDriverRemoteConnectionType, string *pMongoDriverRemoteConnectionHost, uint16_t *pMongoDriverRemoteConnectionPort, string *pAgentID, string *pAgentname, chrono::microseconds *pStepRunTime, chrono::time_point<chrono::high_resolution_clock> *pNextRunTime, int *pPriority, atomic<bool> *pStopped);
 	
-	
+
 	int fGetDataMaxOf(string* pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pMaxattribute, string pGroupattribute = "", string pProjectionattribute = "");
 	int fGetDataMinOf(string* pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pMinattribute, string pGroupattribute = "", string pProjectionattribute = "");
 	int fGetDataAvgOf(string* pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pAvgattribute, string pGroupattribute = "", string pProjectionattribute = "");

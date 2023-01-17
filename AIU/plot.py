@@ -128,7 +128,7 @@ MongoClient = pymongo.MongoClient('mongodb://localhost:27017/')
 RawDB = MongoClient['PerformanceDB']
 InfoDB = MongoClient['Real_Case_20W']
 
-Dataset = RawDB['DLOW']
+Dataset = RawDB['DBPFI']
 TestResult = InfoDB['RAW_DB_Retrain']
 PredictResult = InfoDB['PR_Prova']
 
@@ -170,13 +170,13 @@ for feature in features_desired:
 dataset=Dataset.find()
 data1,data2=[],[]
 for i in range(1,3335,1):
-   data1.append(dataset[0]['ayBearDx_' + str(i)])
+   data1.append(dataset[40]['ayBearDx_' + str(i)])
    #data2.append(dataset[0]['ayBearDx_' + str(i)])
-plt.ylabel('Acc [mm/s^2]')
+plt.ylabel(r'Acc $[\frac{mm}{s^2}]$')
 plt.xlabel('Samples')
-plt.title('Lubricated Bearing')
+plt.title('Faulty Bearing')
 plt.plot(data1)
-#plt.ylim(-0.9,0.9)
+plt.ylim(-4,4)
 #plt.plot(data2)
 plt.show()
 

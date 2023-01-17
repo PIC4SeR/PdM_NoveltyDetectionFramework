@@ -30,7 +30,7 @@ class Predictor:
         #self.__rf__ = DecisionTreeRegressor()
         self.__test_result_collection__ = testresult_collection
         self.__predicted_feature__ = predicted_feature
-        self.__directory__ = 'TR'
+        self.__directory__ = 'Low_Retrain'
         self.__filename__ = 'Predictor_' + str(self.__predicted_feature__) + '_Model.sav'
         
 
@@ -430,22 +430,31 @@ class AI_Unit:
 
 
 MongoClient = pymongo.MongoClient('mongodb://localhost:27017')
-MongoClient['PerformanceDB']['TR_LOW'].drop()
-MongoClient['PerformanceDB']['LOW'].drop()
-MongoClient['PerformanceDB']['z'].drop()
+#MongoClient['SpeaDB']['Perf'].drop()
+#MongoClient['SpeaDB']['Res_Tr'].drop()
+#MongoClient['SpeaDB']['TestRes'].drop()
+#MongoClient['PerformanceDB']['LOW'].drop()
+#MongoClient['PerformanceDB']['z'].drop()
 #RawDB = MongoClient['RawDB']
 InfoDB = MongoClient['PerformanceDB']
 
-Dataset = InfoDB['DLOW']
-Trainset = InfoDB['TR_LOW']
-TestResult = InfoDB['LOW']
-Performance = InfoDB['z']
+InfoDB['Perf'].drop()
+InfoDB['Result'].drop()
+InfoDB['TR_LOW_Retrain'].drop()
+#del InfoDB['TR_LOW_Retrain']
+#del InfoDB['Result']
+Dataset = InfoDB['DLOW_Retrain']
+Trainset = InfoDB['TR_LOW_Retrain']
+TestResult = InfoDB['Result']
+Performance = InfoDB['Perf']
+
 
 # LoadDataset(mongodb_collection=Dataset, dataset_filepath='./Dataset.txt', separator=',', header=0)
 
 #Label definition set by user
 #label_strings=['ax_a_','ay_a_','ax_b_','ay_b_','ax_c_','ay_c_','ax_d_','ay_d_']
 label_strings=['axBearDx_','axBearSx_','ayBearDx_','ayBearSx_','axShaft_','ayShaft_']
+#label_strings=['Res_']
 
 windows = 20
 #Prediction wanted set by user

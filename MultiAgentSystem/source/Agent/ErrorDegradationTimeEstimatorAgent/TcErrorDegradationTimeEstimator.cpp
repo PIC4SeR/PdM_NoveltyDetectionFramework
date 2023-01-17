@@ -209,7 +209,7 @@ int TcErrorDegradationTimeEstimator::fNotifyPrediction(chrono::system_clock::tim
 
 const string TcErrorDegradationTimeEstimator::kPredictorAttribute = "Predicted_Feature";
 const string TcErrorDegradationTimeEstimator::kErrorsAttribute = "Errors";
-const string TcErrorDegradationTimeEstimator::kLastTestTimeAttribute = "Last_Testset_Time";
+const string TcErrorDegradationTimeEstimator::kLastTestTimeAttribute = "Timestamp";
 const string TcErrorDegradationTimeEstimator::kActualErrorTime = "ActualErrorTime";
 const string TcErrorDegradationTimeEstimator::kAgentStartTime = "AgentStartTime";
 const string TcErrorDegradationTimeEstimator::kTrainStartTime = "TrainStartTime";

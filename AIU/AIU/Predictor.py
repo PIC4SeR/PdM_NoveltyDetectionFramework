@@ -1,7 +1,4 @@
 from datetime import datetime
-
-
-
 import numpy as np
 import pymongo
 from typing import List
@@ -15,24 +12,22 @@ import fnmatch
 import threading
 import time
 import sys
-
 from AIU.Logger import Logger
 
 
-
+# Predictor created by the AIU 
 class Predictor:
     def __init__(self, model_recover_directory: str, model_recover_filename: str, predicted_feature: int, testresult_collection: pymongo.collection.Collection,
                  random_state, n_estimators, max_features):
         self.__rf__ = RandomForestRegressor(random_state=random_state, n_estimators=n_estimators,
                                             max_features=max_features)
-        # self.__rf__=LinearRegression()
-        # self.__rf__ = DecisionTreeRegressor()
         self.__trained__ = False
         self.__test_result_collection__ = testresult_collection
         self.__predicted_feature__ = predicted_feature
         self.__model_recover_directory__ = model_recover_directory
         self.__model_recover_filename__ = model_recover_filename
 
+    # Select label to predict
     def SelectLabel(self, dataset: List[List[float]]):
         try:
             data_array = np.array(dataset)
@@ -41,6 +36,7 @@ class Predictor:
             Logger.CmdLogger(e.__str__())
             raise e
 
+    # Select features
     def SelectFeatures(self, dataset):
         try:
             features = []
@@ -54,6 +50,7 @@ class Predictor:
             Logger.CmdLogger(e.__str__())
             raise e
 
+    # Label prediction after the training
     def Predict(self, test_features: List[List[float]]):
         try:
             return list(self.__rf__.predict(X=test_features))
@@ -61,6 +58,7 @@ class Predictor:
             Logger.CmdLogger(e.__str__())
             raise e
 
+    # Save models trained for each label to reduce to neglect another training if a framework restart is necessary
     def SaveModel(self, model):
         try:
             path = os.path.join(self.__model_recover_directory__ + '/' + self.__model_recover_filename__)
@@ -70,6 +68,7 @@ class Predictor:
             print(e)
             raise e
 
+    # In case of a restart, load the models saved
     def LoadModel(self, filename):
         try:
             model = joblib.load(filename)
@@ -78,6 +77,7 @@ class Predictor:
             Logger.CmdLogger(e.__str__())
             raise e
 
+    # Publish the test result on the database
     def Publish_Test_Result(self, test_result: dict):
         try:
             result = self.__test_result_collection__.insert_one(test_result)
@@ -86,6 +86,7 @@ class Predictor:
             Logger.CmdLogger(e.__str__())
             raise e
 
+    # Training function for each predictor
     def Trainer(self, trainset: List[List[float]]):
         try:
             #Model of predictor do not exist and a training is required
@@ -98,6 +99,7 @@ class Predictor:
             Logger.CmdLogger(e.__str__())
             raise e
 
+    # Recovering function for each predictor created
     def Recoverer(self):
         try:
             models = fnmatch.filter(os.listdir(self.__model_recover_directory__), self.__model_recover_filename__)
@@ -112,11 +114,13 @@ class Predictor:
             Logger.CmdLogger(e.__str__())
             raise e
 
+    # Recover function 
     def Recover(self, model):
         self.__rf__ = self.LoadModel(self.__model_recover_directory__ + '/' + model)
         self.__trained__ = True
         Logger.CmdLogger('Predictor ' + str(self.__predicted_feature__) + ' recovered')
 
+    # Train function
     def Train(self, trainset: List[List[float]]):
         try:
             train_labels = self.SelectLabel(dataset=trainset)
@@ -131,6 +135,7 @@ class Predictor:
             Logger.CmdLogger(e.__str__())
             raise e
 
+    # Testing function for each predictor
     def Tester(self, testset: List[List[float]], last_testset_time: datetime):
         try:
             tester = threading.Thread(target=self.Test, args=[testset, last_testset_time])
@@ -142,6 +147,7 @@ class Predictor:
             Logger.CmdLogger(e.__str__())
             raise e
 
+    # Test function
     def Test(self, testset: List[List[float]], last_testset_time: datetime):
         try:
             test_labels = self.SelectLabel(dataset=testset)
@@ -154,6 +160,7 @@ class Predictor:
             Logger.CmdLogger(e.__str__())
             raise e
 
+    # Scores of the prediction
     @staticmethod
     def Scores(predictions: List[float], labels: List[float]):
         from sklearn.metrics import d2_pinball_score
@@ -172,6 +179,7 @@ class Predictor:
             Logger.CmdLogger(e.__str__())
             raise e
 
+    # Errors of the prediction
     @staticmethod
     def Errors(predictions: List[float], labels: List[float]):
         from sklearn.metrics import mean_squared_error
@@ -189,6 +197,7 @@ class Predictor:
             Logger.CmdLogger(e.__str__())
             raise e
 
+    # Compute test result for each predictor
     def Compute_Test_Result(self, predictions: List[float], labels: List[float], last_testset_time: datetime):
         test_result = {}
         import concurrent.futures

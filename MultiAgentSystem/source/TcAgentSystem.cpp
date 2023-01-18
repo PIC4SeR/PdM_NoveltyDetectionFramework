@@ -102,7 +102,7 @@ int main()
 	
 	for (int i = 1; i < 7; i++)
 	{
-		system->fLoadAgent(new TcErrorDegradationTimeEstimator(true, false, "../../conf.json", "InfoDB", "Configuration", rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort, string("AG") + to_string(i), 15, i, "MAE", 150, 15, 3000, 15, 
+		system->fLoadAgent(new TcErrorDegradationTimeEstimator(false, false, "../../conf.json", "InfoDB", "Configuration", rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort, string("AG") + to_string(i), 15, i, "MAE", 150, 15, 3000, 15, 
 			chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)),  string("TestResult"), string("Prediction"), string("MAE-Degradation-Time-Estimator") + to_string(i), chrono::microseconds(1000000), chrono::system_clock::now(), TcAgent::Priority::High, false));
 	}
 

@@ -9,6 +9,7 @@ from typing import Dict
 import pandas as pd
 import os
 import sys
+import json
 
 try:
     from msvcrt import kbhit
@@ -18,67 +19,59 @@ except ImportError:
         dr, dw, de = select([sys.stdin], [], [], 0)
         return dr != []
 
-
+#AIU Inizialization
 class AI_Unit:
     def __init__(self,
                  mongo_string: str = 'mongodb://localhost:27017',
-                 remote_configure: bool = False,
                  predictor_recover_directory: str = '', dataloge: bool = False, trained:bool = False,
-                 tested:bool = False, column_names: List[str] = [],
+                 column_names: List[str] = [],
                  nmin_datasets_for_train: int = 0, nmin_dataset_for_test: int = 0, nmax_dataset_for_test: int = 0,
                  raw_db: str = '',  info_db: str = 'InfoDB', rawdataset_collection: str = '',
                  trainset_collection: str = '', testresult_collection: str = '', performance_collection: str = '', configuration_collection: str = 'Configuration',
                  predicted_features: List[int] = [], windows: int = 0,
                  random_state: int = 0, n_estimators: int = 0, max_features: int = 0):
-
-        if remote_configure:
-            self.__mongo_client__ = pymongo.MongoClient(mongo_string)
-            self.__infodb__ = self.__mongo_client__[info_db]
-            self.__configuration_collection__ = self.__infodb__[configuration_collection]
-            self.RemoteConfig()
-        else:
             self.LocalConfig(mongo_string=mongo_string,
               predictor_recover_directory=predictor_recover_directory,
-              dataloge=dataloge, trained=trained, tested=tested,
+              dataloge=dataloge, trained=trained,
               column_names=column_names, predicted_features=predicted_features,
               nmin_datasets_for_train=nmin_datasets_for_train, nmin_dataset_for_test=nmin_dataset_for_test,
               nmax_dataset_for_test=nmax_dataset_for_test, raw_db=raw_db, info_db=info_db,
               rawdataset_collection=rawdataset_collection, trainset_collection=trainset_collection,
               testresult_collection=testresult_collection, performance_collection=performance_collection, configuration_collection=configuration_collection,
               windows=windows, random_state=random_state, n_estimators=n_estimators, max_features=max_features)
-            self.SaveConfigurationRemotely()
 
-
+    # Save the configuration on the remote database
     def SaveConfigurationRemotely(self):
+            Configuration = json.load(open('Configuration.json'))
             conf = {}
-            conf['predictor_recover_directory'] = self.__predictor_recover_directory__
-            conf['column_names'] = self.__column_names__
-            conf['predicted_features'] = self.__predicted_features__
-            conf['nmin_datasets_for_train'] = self.__nmin_datasets_for_train__
-            conf['nmin_dataset_for_test'] = self.__nmin_datasets_for_test__
-            conf['nmax_dataset_for_test'] = self.__nmax_datasets_for_test__
-            conf['mongo_string'] = self.__mongo_string__
-            conf['raw_db'] = self.__rawdb__.name
-            conf['info_db'] = self.__infodb__.name
-            conf['rawdataset_collection'] = self.__rawdataset_collection__.name
-            conf['trainset_collection'] = self.__trainset_collection__.name
-            conf['testresult_collection'] = self.__testresult_collection__.name
-            conf['performance_collection'] = self.__performance_collection__.name
-            conf['configuration_collection'] = self.__configuration_collection__.name
-            conf['windows'] = self.__windows__
-            conf['random_state'] = self.__random_state__
-            conf['n_estimators'] = self.__n_estimators__
-            conf['max_features'] = self.__max_features__
-            conf['trained'] = self.__trained__
-            conf['tested'] = self.__tested__
-            conf['dataloge'] = self.__datalog__
+            conf['predictor_recover_directory'] = Configuration['predictor_recover_directory']
+            conf['column_names'] = Configuration['column_names']
+            conf['predicted_features'] = Configuration['predicted_features']
+            conf['nmin_datasets_for_train'] = Configuration['nmin_datasets_for_train']
+            conf['nmin_dataset_for_test'] = Configuration['nmin_dataset_for_test']
+            conf['nmax_dataset_for_test'] = Configuration['nmax_dataset_for_test']
+            conf['mongo_string'] = Configuration['mongo_string']
+            conf['raw_db'] = Configuration['raw_db']
+            conf['info_db'] = Configuration['info_db']
+            conf['rawdataset_collection'] = Configuration['rawdataset_collection']
+            conf['trainset_collection'] = Configuration['trainset_collection']
+            conf['testresult_collection'] = Configuration['testresult_collection']
+            conf['performance_collection'] = Configuration['performance_collection']
+            conf['configuration_collection'] = Configuration['configuration_collection']
+            conf['windows'] = Configuration['windows']
+            conf['random_state'] = Configuration['random_state']
+            conf['n_estimators'] = Configuration['n_estimators']
+            conf['max_features'] = Configuration['max_features']
+            conf['trained'] = Configuration['trained']
+            conf['dataloge'] = Configuration['dataloge']
             conf['timestamp'] = datetime.now()
             self.__configuration_collection__.insert_one(conf)
 
+    # Load the Local Configuration 
     def LocalConfig(self,
                  mongo_string: str,
                  predictor_recover_directory: str, dataloge: bool, trained:bool,
-                 tested:bool, column_names: [],
+                 column_names: [],
                  nmin_datasets_for_train: int, nmin_dataset_for_test: int, nmax_dataset_for_test: int,
                  raw_db: str, info_db: str, rawdataset_collection: str,
                  trainset_collection: str, testresult_collection: str, performance_collection: str,
@@ -86,12 +79,10 @@ class AI_Unit:
                  random_state: int, n_estimators: int, max_features: int):
         self.__predictor_recover_directory__ = predictor_recover_directory
         self.__trained__ = trained
-        self.__tested__ = tested
         self.__datalog__ = dataloge
         self.__nmin_datasets_for_train__ = nmin_datasets_for_train
         self.__nmin_datasets_for_test__ = nmin_dataset_for_test
         self.__nmax_datasets_for_test__ = nmax_dataset_for_test
-        # self.__last__ = datetime.now()
         self.__mongo_string__ = mongo_string
         self.__mongo_client__ = pymongo.MongoClient(mongo_string)
         self.__rawdb__ = self.__mongo_client__[raw_db]
@@ -121,12 +112,13 @@ class AI_Unit:
                                                  testresult_collection=self.__testresult_collection__,
                                                  random_state=random_state, n_estimators=n_estimators,
                                                  max_features=max_features))
+        self.SaveConfigurationRemotely()
 
+    # Load the remote configuration already loaded on the database
     def RemoteConfig(self):
         configuration = self.__configuration_collection__.find({}).sort('timestamp', pymongo.DESCENDING).limit(1)[0]
         self.__predictor_recover_directory__ = configuration['predictor_recover_directory']
         self.__trained__ = configuration['trained']
-        self.__tested__ = configuration['tested']
         self.__datalog__ = configuration['dataloge']
         self.__nmin_datasets_for_train__ = configuration['nmin_datasets_for_train']
         self.__nmin_datasets_for_test__ = configuration['nmin_dataset_for_test']
@@ -160,10 +152,9 @@ class AI_Unit:
                                                  testresult_collection=self.__testresult_collection__,
                                                  random_state=self.__random_state__, n_estimators=self.__n_estimators__,
                                                  max_features=self.__max_features__))
+        self.Retrain()
 
-
-
-
+    # Create Predictors on the features basis
     def LoadPredictor(self, predictor: Predictor):
         try:
             self.__predictors__.append(predictor)
@@ -171,6 +162,7 @@ class AI_Unit:
             print(e)
             raise e
 
+    # Update Function
     def Update(self):
         trainsets = []
         for dataset in self.__trainset_collection__.find().sort('TimestampUnix', pymongo.ASCENDING):
@@ -182,6 +174,7 @@ class AI_Unit:
                 trainsets.append(dataset)
         self.Train(trainsets=trainsets)
 
+    # Retrain Function
     def Retrain(self):
         self.__trainset_collection__.drop()
         self.__testresult_collection__.drop()
@@ -193,11 +186,10 @@ class AI_Unit:
             trainsets.append(dataset)
         self.Train(trainsets=trainsets)
 
+    # If models are already trained and are in local folder, load them instead of retrain new models
     def Recover(self):
         if self.__datalog__:
             recoverystarttime = (datetime.now() - self.__starttime__).total_seconds()
-
-
         if os.path.isdir(self.__predictor_recover_directory__) and len(os.listdir(self.__predictor_recover_directory__)) == len(self.__predicted_features__):
             recoverers = []
             for predictor in self.__predictors__:
@@ -224,7 +216,6 @@ class AI_Unit:
                     self.__trainset_collection__.insert_one(dataset)
                 last_train = self.Train(trainsets=trainsets)
 
-
         if self.__testresult_collection__.count_documents({}) > 0:
             last = self.__testresult_collection__.find_one(sort=[('TimestampUnix', pymongo.DESCENDING)])['TimestampUnix']
         elif self.__trainset_collection__.count_documents({}) > 0:
@@ -240,6 +231,7 @@ class AI_Unit:
 
         return last
 
+    # Training function
     def Train(self, trainsets: List[List[float]]):
         complete_trainset = self.Preprocess(datasets=trainsets)
         trainers = []
@@ -266,6 +258,7 @@ class AI_Unit:
 
         return trainsets[len(trainsets) - 1]['TimestampUnix']
 
+    # Testing function
     def Test(self):
         if self.__rawdataset_collection__.count_documents(
                 {'TimestampUnix': {'$gt': self.__last__}}) > self.__nmin_datasets_for_test__:
@@ -292,6 +285,7 @@ class AI_Unit:
                 Logger.MongoLogger(self.__performance_collection__, {'Test_Time': endpredicttime - startpredicttime})
             return last_testset_time
 
+    # Windowing function
     def Preprocess(self, datasets):
 
         if self.__datalog__:
@@ -328,7 +322,6 @@ class AI_Unit:
                 All_Data = pd.DataFrame(np.array(sum_abs).reshape(1, -1), columns=names)
                 New_Dataframe = pd.concat([New_Dataframe, All_Data], axis=0)
             New_Dataframe = New_Dataframe.reset_index(drop=True)
-            # New_Dataframe['Timestamp']=data['Timestamp']
             complete_dataset.append(list(New_Dataframe.values[0]))
 
         if self.__datalog__:
@@ -336,6 +329,7 @@ class AI_Unit:
             Logger.MongoLogger(self.__performance_collection__, {'PreprocessTrain_Time': endpreprocesstime - startpreprocesstime})
         return complete_dataset
 
+    # Run the AIU
     def Run(self):
         try:
             print('Check for existing saved models before training')
@@ -353,11 +347,15 @@ class AI_Unit:
                     self.__last__ = self.Train(trainsets)
             # Testing Loop
             while self.__trained__:
-                self.__last__ = self.Test()
-                self.ExecuteCommand()
+                try:
+                    self.__last__ = self.Test()
+                    self.ExecuteCommand()
+                except Exception as e:
+                    print(e)
         except Exception as e:
             print(e)
 
+    # Keyboard interrupts to handle the framework in real-time
     def ExecuteCommand(self):
         if kbhit():
             key = input()
@@ -367,11 +365,11 @@ class AI_Unit:
             elif key == 'R':
                 print("Retrain")
                 self.Retrain()
-            elif key == 'C':
-                print("Recover")
-                self.Recover()
+            elif key == 'S':
+                self.SaveConfigurationRemotely()
+                print("Configuration Saved on the Database")
             elif key == 'T':
-                print("Remote Configuration")
+                print("Last Remote Configuration Loaded")
                 self.RemoteConfig()
         return
 

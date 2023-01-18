@@ -372,4 +372,3 @@ class AI_Unit:
                 print("Last Remote Configuration Loaded")
                 self.RemoteConfig()
         return
-

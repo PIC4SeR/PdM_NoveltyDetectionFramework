@@ -100,10 +100,10 @@ int main()
 	TcAgentSystem* system = new TcAgentSystem("S - 0", "System - 0");
 	system->fLoadManager("AM0", "Agent Manager", chrono::microseconds(10000), chrono::microseconds(50000000000000));
 	
-	for (int i = 1; i < 7; i++)
+	for (int i = 1; i < 2; i++)
 	{
-		system->fLoadAgent(new TcErrorDegradationTimeEstimator(false, false, "../../conf.json", "InfoDB", "Configuration", rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort, string("AG") + to_string(i), 15, i, "MAE", 150, 15, 3000, 15, 
-			chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)),  string("TestResult"), string("Prediction"), string("MAE-Degradation-Time-Estimator") + to_string(i), chrono::microseconds(1000000), chrono::system_clock::now(), TcAgent::Priority::High, false));
+		system->fLoadAgent(new TcErrorDegradationTimeEstimator(true, true, "../../Configuration.json", "InfoDB", "Configuration", rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort, string("AG") + to_string(i), 4, i, "MAE", 40, 5, 3000, 4, 
+			chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)),  string("TestResult"), string("Prediction"), string("MAE-Degradation-Time-Estimator") + to_string(i), chrono::microseconds(1000000), chrono::high_resolution_clock::now(), TcAgent::Priority::High, false));
 	}
 
 	try{

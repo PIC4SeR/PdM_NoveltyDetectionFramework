@@ -152,7 +152,7 @@ class AI_Unit:
                                                  testresult_collection=self.__testresult_collection__,
                                                  random_state=self.__random_state__, n_estimators=self.__n_estimators__,
                                                  max_features=self.__max_features__))
-        self.Retrain()
+        self.Update()
 
     # Create Predictors on the features basis
     def LoadPredictor(self, predictor: Predictor):

@@ -24,6 +24,7 @@ AIU/__pycache__
 *.sav
 *.pyc
 *.tlog*
+Raw_Data_Sample.json
 
 
 

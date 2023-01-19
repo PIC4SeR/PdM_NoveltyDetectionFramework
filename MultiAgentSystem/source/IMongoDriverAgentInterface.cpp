@@ -210,7 +210,7 @@ int IMongoDriverAgentInterface::fGetLastConfiguration(string pDatabase, string p
             *pAgentID = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kAgentId].get_utf8().value.to_string());
             *pAgentname = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kAgentName].get_utf8().value.to_string());
             *pStepRunTime = chrono::milliseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kStepRunTime].get_int32().value);
-            *pNextRunTime = chrono::system_clock::now();
+            *pNextRunTime = chrono::high_resolution_clock::now();
             *pPriority = cAgentConfiguration[TcErrorDegradationTimeEstimator::kPriority].get_int32().value;
             (*pStopped).store(cAgentConfiguration[TcErrorDegradationTimeEstimator::kStopped].get_bool().value);
         }

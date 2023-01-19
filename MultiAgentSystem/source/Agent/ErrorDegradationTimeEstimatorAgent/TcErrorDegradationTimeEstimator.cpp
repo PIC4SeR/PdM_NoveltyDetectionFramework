@@ -264,7 +264,7 @@ int TcErrorDegradationTimeEstimator::fGetLastConfigurationFromFile()
 		this->rmAgentID = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kAgentId].get_utf8().value.to_string());
 		this->rmAgentName = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kAgentName].get_utf8().value.to_string());
 		this->cmStepRunTime = chrono::milliseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kStepRunTime].get_int64().value);
-		this->cmNextRunTime = chrono::system_clock::now();
+		this->cmNextRunTime = chrono::high_resolution_clock::now();
 		this->cmRunPriority = IAgent::Priority(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPriority].get_int32().value);
 		this->cmStopped.store(cAgentConfiguration[TcErrorDegradationTimeEstimator::kStopped].get_bool().value);
 	}

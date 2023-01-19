@@ -1,3 +1,45 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:016528ffb5079b5dd7e69715f02870fa81e8c70e08e287343630c12dafdb629e
-size 9504
+{
+    "predictor_recover_directory": "./Recovery",
+    "column_names": ["axBearDx_", "axBearSx_", "ayBearDx_", "ayBearSx_", "axShaft_", "ayShaft_"],
+    "predicted_features": [1, 2, 3, 4, 5, 10],
+    "nmin_datasets_for_train": 5,
+    "nmin_dataset_for_test": 2,
+    "nmax_dataset_for_test": 2,
+    "mongo_string": "mongodb://localhost:27017",
+    "raw_db": "RawDB",
+    "info_db": "InfoDB",
+    "rawdataset_collection": "Dataset",
+    "trainset_collection": "Trainset",
+    "testresult_collection": "TestResult",
+    "performance_collection": "Performance",
+    "configuration_collection": "Configuration",
+    "windows": 20,
+    "random_state": 0,
+    "n_estimators": 6,
+    "max_features": 2,
+    "trained": false,
+    "dataloge": true,
+    "timestamp": "2023-01-01 00:00:00",
+    "agents": { "AG0" : { 
+                        "num_samples_read": 4,
+                        "predictor": 1,
+                        "predicted_error_type": "MAE",
+                        "predicted_error_value" : 40.0,
+                        "min_operative_threshold_error" : 5.0,
+                        "max_operative_threshold_error": 3000.0,
+                        "min_num_of_regr_samples": 4,
+                        "prevention_threshold_time": 10,
+                        "test_result_collection": "TestResult",
+                        "prediction_result_collection": "Prediction",
+                        "database_name": "InfoDB",
+                        "mongo_driver_remote_connection_type": "mongodb",
+                        "mongodriver_remote_connection_host": "localhost",
+                        "mongo_driver_remote_connection_port": 27017,
+                        "agent_id": "AG0",
+                        "agent_name": "Agent 0",
+                        "step_run_time": 10,
+                        "priority": 4,
+                        "stopped": false 
+                    }               
+            }
+}

@@ -92,7 +92,7 @@ int TcErrorDegradationTimeEstimator::fRun()
 			return (kRunFails);
 		}
 
-		if (rTimes.size() <= 0 || rTimes.size() > 0 && rTimes.front() * 1000000 <= this->rmLastSampleTime.time_since_epoch().count())
+		if (rTimes.size() <= 0 || rTimes.size() > 0 && rTimes.front() * 10000 <= this->rmLastSampleTime.time_since_epoch().count())
 		{
 			fprintf(stdout, ANSI_COLOR_YELLOW "(%s) No data from database available" ANSI_COLOR_RESET "\n", __func__);
 			fflush(stdout);

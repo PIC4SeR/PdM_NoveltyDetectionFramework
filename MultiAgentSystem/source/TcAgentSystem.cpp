@@ -72,19 +72,19 @@ void TcAgentSystem::fWaitManager(thread* pManagerThread) {
 	try{
 
 		if(pManagerThread == nullptr){
-			fprintf(stdout, "(%s) Manager-Thread pointer is null\n", __func__);
+			fprintf(stdout, "(%s) Manager-Thread pointer is null/n", __func__);
 			fflush(stdout);
 		}
 
 		if(!pManagerThread->joinable()){
-			fprintf(stdout, "(%s) Manager-Thread is not joinable\n", __func__);
+			fprintf(stdout, "(%s) Manager-Thread is not joinable/n", __func__);
 			fflush(stdout);
 		}
 
 		pManagerThread->join();
 	}
 	catch(system_error se){
-		fprintf(stdout, "(%s) %s, error_code %d\n", __func__, se.what(), se.code().value());
+		fprintf(stdout, "(%s) %s, error_code %d/n", __func__, se.what(), se.code().value());
 		fflush(stdout);
 	}
 
@@ -94,18 +94,20 @@ void TcAgentSystem::fWaitManager(thread* pManagerThread) {
 int main()
 { 
 	string rMongoDBConnectionType = "mongodb";
-	string rMongoDBConnectionHost = "localhost";
+	string rMongoDBConnectionHost = "127.0.0.1";
 	uint16_t rMongoDBConnectionPort = 27017;
 
 	TcAgentSystem* system = new TcAgentSystem("S - 0", "System - 0");
 	system->fLoadManager("AM0", "Agent Manager", chrono::microseconds(10000), chrono::microseconds(50000000000000));
 	
+	// INSERIRE LETTURA DA FILE CONFIGURAZIONE PER INSERIRE LA I IN FUNZIONE DEL NUM DI AGENTI
+
 	for (int i = 1; i < 2; i++)
 	{
-		system->fLoadAgent(new TcErrorDegradationTimeEstimator(true, true, "../../Configuration.json", "InfoDB", "Configuration", rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort, string("AG") + to_string(i), 4, i, "MAE", 40, 5, 3000, 4, 
+		system->fLoadAgent(new TcErrorDegradationTimeEstimator(true, false, "../../../../../Configuration.json", "InfoDB", "Configuration", rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort, string("AG") + to_string(i-1), 4, i, "MAE", 40, 5, 3000, 4, 
 			chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)),  string("TestResult"), string("Prediction"), string("MAE-Degradation-Time-Estimator") + to_string(i), chrono::microseconds(1000000), chrono::high_resolution_clock::now(), TcAgent::Priority::High, false));
+			// TRANNE I PRIMI TRE RENDERE OPZIONALI TUTTI GLI ALTRI PARAMETRI, TUTTO VERRA' LETTO DA FILE DI CONFIGURAZIONE LOCALE
 	}
-
 	try{
 		thread cManagerThread;
 		system->fStartManager(&cManagerThread);

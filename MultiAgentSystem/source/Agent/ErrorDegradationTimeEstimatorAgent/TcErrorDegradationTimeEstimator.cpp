@@ -255,7 +255,9 @@ int TcErrorDegradationTimeEstimator::fGetLastConfigurationFromFile()
 		this->rmMaxOperativeThresholdError = (double)cAgentConfiguration[TcErrorDegradationTimeEstimator::kMaxOpeThresholdError].get_double().value;
 		this->rmMinNumOfRegrSamples = (double) cAgentConfiguration[TcErrorDegradationTimeEstimator::kkMinNumRegrSamples].get_int32().value;
 		this->rmPredictedErrorValue = cAgentConfiguration[TcErrorDegradationTimeEstimator::kPredictedErrorValue].get_double().value;
-		this->rmNotificationPreventionThresholdTime = chrono::milliseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPreventionThresholdTime].get_int64().value);
+
+		this->rmNotificationPreventionThresholdTime = chrono::milliseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPreventionThresholdTime].get_int32().value);
+
 		this->rmPredictionResultCollection = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPredictionResultCollection].get_utf8().value.to_string());
 		this->rmDatabaseName = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kDatabaseName].get_utf8().value.to_string());
 		this->rmMongoDriverRemoteConnectionType = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kMongoDriverRemoteConnectionType].get_utf8().value.to_string());
@@ -263,7 +265,7 @@ int TcErrorDegradationTimeEstimator::fGetLastConfigurationFromFile()
 		this->rmMongoDriverRemoteConnectionPort = cAgentConfiguration[TcErrorDegradationTimeEstimator::kMongoDriverRemoteConnectionPort].get_int32().value;
 		this->rmAgentID = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kAgentId].get_utf8().value.to_string());
 		this->rmAgentName = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kAgentName].get_utf8().value.to_string());
-		this->cmStepRunTime = chrono::milliseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kStepRunTime].get_int64().value);
+		this->cmStepRunTime = chrono::milliseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kStepRunTime].get_int32().value);
 		this->cmNextRunTime = chrono::high_resolution_clock::now();
 		this->cmRunPriority = IAgent::Priority(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPriority].get_int32().value);
 		this->cmStopped.store(cAgentConfiguration[TcErrorDegradationTimeEstimator::kStopped].get_bool().value);

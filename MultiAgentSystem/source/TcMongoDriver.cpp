@@ -60,7 +60,7 @@ int TcMongoDriver::fDatabaseExist(string pDatabase, mongocxx::client& pMongoClie
 		bsoncxx::document::view_or_value cDatabaseExistFilter = bsoncxx::builder::stream::document{} << "filter" << bsoncxx::builder::stream::open_document << "name" << pDatabase << bsoncxx::builder::stream::close_document << bsoncxx::builder::stream::finalize;		
 		mongocxx::cursor cMongoCursor = pMongoClient.list_databases(cDatabaseExistFilter.view());
 		
-		if (cMongoCursor.begin() == cMongoCursor.end() && pCreate){
+		if (cMongoCursor.begin() == cMongoCursor.end() && pCreate) {
 			try {
 				pMongoClient.database(pDatabase);
 				fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
@@ -110,6 +110,8 @@ int TcMongoDriver::fCollectionExist(string pCollection, mongocxx::database pMong
 		fflush(stdout);
 
 		bsoncxx::string::view_or_value cCollectionName = bsoncxx::string::view_or_value(pCollection);
+		return(TcMongoError::TcMongoCollection::kExist);
+
 		if (!pMongoDatabase.has_collection(cCollectionName) && pCreate) {
 			try {
 				pMongoDatabase.create_collection(cCollectionName);

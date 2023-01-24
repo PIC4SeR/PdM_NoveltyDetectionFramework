@@ -104,10 +104,12 @@ int main()
 
 	for (int i = 1; i < 2; i++)
 	{
-		system->fLoadAgent(new TcErrorDegradationTimeEstimator(true, false, "../../../../../Configuration.json", "InfoDB", "Configuration", rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort, string("AG") + to_string(i-1), 4, i, "MAE", 40, 5, 3000, 4, 
+		system->fLoadAgent(new TcErrorDegradationTimeEstimator(true, false, "Configuration.json", "InfoDB", "Configuration", rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort, string("AG") + to_string(i-1), 4, i, "MAE", 40, 5, 3000, 4, 
 			chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)),  string("TestResult"), string("Prediction"), string("MAE-Degradation-Time-Estimator") + to_string(i), chrono::microseconds(1000000), chrono::high_resolution_clock::now(), TcAgent::Priority::High, false));
 			// TRANNE I PRIMI TRE RENDERE OPZIONALI TUTTI GLI ALTRI PARAMETRI, TUTTO VERRA' LETTO DA FILE DI CONFIGURAZIONE LOCALE
 	}
+
+	//"../../../../../Configuration.json"
 	try{
 		thread cManagerThread;
 		system->fStartManager(&cManagerThread);

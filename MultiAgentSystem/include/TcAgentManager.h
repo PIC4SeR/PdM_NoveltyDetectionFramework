@@ -28,10 +28,39 @@ private:
 	chrono::microseconds cmExecutionwaittime;
 	atomic<bool> cmStopped;
 
+	int rmNumOfAgents;
+	string rmConfigurationFile;
+	string rmConfigurationCollection;
+	string rmDatabase;
+
+	string rmMongoDriverRemoteConnectionType;
+	string rmMongoDriverRemoteConnectionHost;
+	uint16_t rmMongoDriverRemoteConnectionPort;
+
+
+	static const string kDefaultConfigurationFile;
+	static const bool kDefaultConfigurationFileEnable;
+	static const bool kDefaultLocalConfigurationEnable;
+	static const string kDefaultDatabase;
+	static const string kDefaultConfigurationCollection;
+	static const string kDefaultConfigurationSortingAttribute;
+	static const string kDefaultDatabaseConnectionType;
+	static const string kDefaultDatabaseConnectionHost;
+	static const uint16_t kDefaultDatabaseConnectionPort;
+	
+
+	static const string kDefaultManagerId;
+	static const string kDefaultManagerName;
+	static const uint64_t kDefaultManagerScheduleTime;
+	static const uint64_t kDefaultManagerExecutionWaitTime;
+	
+
 public:
 
+	static const string kAgentsConfigurationsKey;
+
 	TcAgentManager();
-	TcAgentManager(string pManagerid, string pManagername, chrono::microseconds pSchedulewaittime, chrono::microseconds pExecutionwaittime);
+	TcAgentManager(int pNumOfAgents, bool pLocalFileConfigEnable = kDefaultConfigurationFileEnable, bool pLocalConfigEnable = kDefaultLocalConfigurationEnable, string pLocalConfigFile = kDefaultConfigurationFile, string pDatabase = kDefaultDatabase, string pConfigurationCollection = kDefaultConfigurationCollection, string pMongoDriverRemoteConnectionType = kDefaultDatabaseConnectionType, string pMongoDriverRemoteConnectionHost = kDefaultDatabaseConnectionHost, uint16_t pMongoDriverRemoteConnectionPort = kDefaultDatabaseConnectionPort, string pManagerid = kDefaultManagerId, string pManagername = kDefaultManagerName, chrono::microseconds pSchedulewaittime = chrono::microseconds(kDefaultManagerScheduleTime), chrono::microseconds pExecutionwaittime = chrono::microseconds(kDefaultManagerExecutionWaitTime));
 	~TcAgentManager();
 
 
@@ -42,13 +71,15 @@ public:
 
 	void fExecute();
 
+	int fGetNumOfAgentsFromFile(int *pNumOfAgents);
+
 	void fSetExecutionWaitTime(chrono::microseconds pExecutionwaittime);
 	void fSetScheduleMinWaitTime(chrono::microseconds pScheduleminwaittime);
 	void fSetName(string pManagername);
 	void fSetStopped(bool pStopped);
 	void fSetId(string agentid);
 
-
+	int fGetNumOfAgents();
 	string fGetId();
 	bool fGetStopped();
 	string fGetName();

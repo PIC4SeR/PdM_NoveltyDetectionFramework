@@ -25,8 +25,8 @@ private:
 	string rmPredictedErrorType;
 	double rmPredictedErrorValue;
 
-	chrono::milliseconds rmNotificationPreventionThresholdTime;
-	chrono::milliseconds rmLastPredictedTimeToError;
+	chrono::microseconds rmNotificationPreventionThresholdTime;
+	chrono::microseconds rmLastPredictedTimeToError;
 	chrono::system_clock::time_point rmLastPredictedTimeToErrorTime;
 	chrono::system_clock::time_point rmLastSampleTime;
 
@@ -34,12 +34,23 @@ private:
 	string rmPredictionResultCollection;
 	string rmConfigurationCollection;
 	string rmConfigurationFile;
+	bool rmLocalFileConfigEnable;
+	bool rmLocalConfigEnable;
+
+
 
 
 public:
 
 	class TcError{
 			public:
+				class TcGetConfigurationErrors {
+        			public:
+            			static const int kSuccess = 0;
+						static const int kNoDataAvailable = 1;
+						static const int kFail = -1;
+						static const int kConnectionLost = -2;
+        		};
 				class TcGetLastErrors {
         			public:
             			static const int kSuccess = 0;
@@ -101,18 +112,57 @@ public:
 	static const string kConfigurationAgents;
 	static const string kConfTimestamp;
 	static const string kAgentPredictor;
+	static const string kNumOfAgents;
+
+	
+
+
+	static const string kDefaultDatabase;
+	static const bool kDefaultLocalConfigurationEnable;
+	static const bool kDefaultConfigurationFileEnable;
+	static const string kDefaultDatabaseConnectionType;
+	static const string kDefaultDatabaseConnectionHost;
+	static const uint16_t kDefaultDatabaseConnectionPort;
+
+	static const string kDefaultConfigurationCollection;
+	static const string kDefaultTestResultCollection;
+	static const string kDefaultPredictionResultCollection;
+
+	static const string kDefaultConfigurationSortingAttribute;
+	static const string kDefaultConfigurationFile;
+	static const string kAgentsConfigurationsKey;
+
+	static const string kDefaultManagerId;
+	static const string kDefaultManagerName;
+	static const uint64_t kDefaultManagerScheduleTime;
+	static const uint64_t kDefaultManagerExecutionWaitTime;
+
+	static const string kDefaultAgentId;
+	static const string kDefaultAgentName;
+	static const uint64_t kDefaultStepRunTime;
+	static const uint64_t kDefaultPreventionThresholdTime;
+	static const int kDefaultNumSamplesRead;
+	static const unsigned int kDefaultPredictor;
+	static const string kDefaultPredictedErrorType;
+	static const double kDefaultPredictedErrorValue;
+	static const double kDefaultMinOperativeThresholdError;
+	static const double kDefaultMaxOperativeThresholdError;
+	static const int kDefaultMinNumOfRegrSamples;
 
 
 
-	TcErrorDegradationTimeEstimator(bool pLocalFileConfigEnable, bool pLocalConfigEnable, string pLocalConfigFile, string pDatabaseName,  string pConfigurationCollection, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pAgentID, int pNumSamplesRead, unsigned int pPredictor, string pPredictedErrorType, double pPredictedErrorValue, double pMinOperativeThresholdError, double pMaxOperativeThresholdError, int pMinNumOfRegrSamples, chrono::milliseconds pPreventionThresholdTime, string pTestResultCollection, string pPredictionResultCollection, string pAgentname, chrono::microseconds pStepRunTime, chrono::time_point<chrono::high_resolution_clock> pNextRunTime = chrono::high_resolution_clock::now(), TcAgent::Priority pPriority = Priority::Medium, bool pStopped = false);
+
+	TcErrorDegradationTimeEstimator(bool pLocalFileConfigEnable = kDefaultConfigurationFileEnable, bool pLocalConfigEnable = kDefaultLocalConfigurationEnable, string pLocalConfigFile = kDefaultConfigurationFile, string pDatabaseName = kDefaultDatabase,  string pConfigurationCollection = kDefaultConfigurationCollection, string pMongoDriverRemoteConnectionType = kDefaultDatabaseConnectionType, string pMongoDriverRemoteConnectionHost = kDefaultDatabaseConnectionHost, uint16_t pMongoDriverRemoteConnectionPort = kDefaultDatabaseConnectionPort, string pAgentID = kDefaultAgentId, int pNumSamplesRead = kDefaultNumSamplesRead, unsigned int pPredictor = kDefaultPredictor, string pPredictedErrorType = kDefaultPredictedErrorType, double pPredictedErrorValue = kDefaultPredictedErrorValue, double pMinOperativeThresholdError = kDefaultMinOperativeThresholdError, double pMaxOperativeThresholdError = kDefaultMaxOperativeThresholdError, int pMinNumOfRegrSamples = kDefaultMinNumOfRegrSamples, chrono::microseconds pPreventionThresholdTime = chrono::microseconds(kDefaultPreventionThresholdTime), string pTestResultCollection = kDefaultTestResultCollection, string pPredictionResultCollection = kDefaultTestResultCollection, string pAgentname = kDefaultAgentName, chrono::microseconds pStepRunTime = chrono::microseconds(kDefaultStepRunTime), chrono::time_point<chrono::high_resolution_clock> pNextRunTime = chrono::high_resolution_clock::now(), TcAgent::Priority pPriority = Priority::Medium, bool pStopped = false);
 	~TcErrorDegradationTimeEstimator();
 
+	
 	virtual int fRun();
 	int fGetLastErrors(list<long long> *pTimes, list<double> *pErrors);
 	int fGetLastConfigurationFromDatabase();
 	int fGetLastConfigurationFromFile();
-	void fMakePrediction(list<long long> pTimes, list<double> pErrors, long long *pPrediction, double *pMcoefficient, double* pQoffset, chrono::system_clock::time_point* pStartTrainTime, chrono::system_clock::time_point* pEndTrainTime, chrono::system_clock::time_point* pEndPredictionTime, chrono::system_clock::time_point* pPredictedTimeOfError, chrono::milliseconds* pPredictedTimeToError);
-	int fNotifyPrediction(chrono::system_clock::time_point pAgentStartTime, long long pLastErrorTime, double pLastError, long long pPrediction, double pMcoefficient, double pQoffset, chrono::system_clock::time_point pStartTrainTime, chrono::system_clock::time_point pEndTrainTime, chrono::system_clock::time_point pEndPredictionTime, chrono::system_clock::time_point pPredictedTimeOfError, chrono::milliseconds pPredictedTimeToError);
+	int fGetConfiguration();
+	void fMakePrediction(list<long long> pTimes, list<double> pErrors, long long *pPrediction, double *pMcoefficient, double* pQoffset, chrono::system_clock::time_point* pStartTrainTime, chrono::system_clock::time_point* pEndTrainTime, chrono::system_clock::time_point* pEndPredictionTime, chrono::system_clock::time_point* pPredictedTimeOfError, chrono::microseconds* pPredictedTimeToError);
+	int fNotifyPrediction(chrono::system_clock::time_point pAgentStartTime, long long pLastErrorTime, double pLastError, long long pPrediction, double pMcoefficient, double pQoffset, chrono::system_clock::time_point pStartTrainTime, chrono::system_clock::time_point pEndTrainTime, chrono::system_clock::time_point pEndPredictionTime, chrono::system_clock::time_point pPredictedTimeOfError, chrono::microseconds pPredictedTimeToError);
 };
 
 

@@ -10,7 +10,7 @@ using namespace std;
 TcAgentSystem::TcAgentSystem(string pSystemid, string pSystemname) {
 	this->rmSystemid = pSystemid;
 	this->rmSystemname = pSystemname;
-	this->cmManager = new TcAgentManager();
+	
 }
 TcAgentSystem::~TcAgentSystem() {
 	if (this->cmManager != nullptr){
@@ -23,11 +23,8 @@ void TcAgentSystem::fExecuteManager() {
 void TcAgentSystem::fStopManager() {
 	this->cmManager->fSetStopped(true);
 }
-void TcAgentSystem::fLoadManager(string pManagerid, string pManagername, chrono::microseconds pScheduleminwaittime, chrono::microseconds pExecutionwaittime) {
-	this->cmManager->fSetId(pManagerid);
-	this->cmManager->fSetName(pManagername);
-	this->cmManager->fSetScheduleMinWaitTime(pScheduleminwaittime);
-	this->cmManager->fSetExecutionWaitTime(pExecutionwaittime);
+void TcAgentSystem::fLoadManager(bool pLocalFileConfigEnable, bool pLocalConfigEnable, string pLocalConfigFile, string pDatabase, string pConfigurationCollection, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pManagerid, string pManagername, chrono::microseconds pScheduleminwaittime, chrono::microseconds pExecutionwaittime) {
+	this->cmManager = new TcAgentManager(0, pLocalFileConfigEnable, pLocalConfigEnable, pLocalConfigFile, pDatabase, pConfigurationCollection, pMongoDriverRemoteConnectionType, pMongoDriverRemoteConnectionHost, pMongoDriverRemoteConnectionPort, pManagerid, pManagername, pScheduleminwaittime, pExecutionwaittime);
 }
 void TcAgentSystem::fLoadAgent(IAgent* pAgent) {
 	this->cmManager->fAddAgent(pAgent);
@@ -94,22 +91,27 @@ void TcAgentSystem::fWaitManager(thread* pManagerThread) {
 int main()
 { 
 	string rMongoDBConnectionType = "mongodb";
-	string rMongoDBConnectionHost = "127.0.0.1";
+	string rMongoDBConnectionHost = "localhost";
 	uint16_t rMongoDBConnectionPort = 27017;
 
 	TcAgentSystem* system = new TcAgentSystem("S - 0", "System - 0");
-	system->fLoadManager("AM0", "Agent Manager", chrono::microseconds(10000), chrono::microseconds(50000000000000));
-	
-	// INSERIRE LETTURA DA FILE CONFIGURAZIONE PER INSERIRE LA I IN FUNZIONE DEL NUM DI AGENTI
+	system->fLoadManager(false, false, 
+						"./Configuration.json", 
+						"InfoDB",
+						"Configuration",
+						rMongoDBConnectionType,
+						rMongoDBConnectionHost,
+						rMongoDBConnectionPort,
+						"AM0", "Agent Manager",
+						chrono::microseconds(1000000),
+						chrono::microseconds(10000000));
 
-	for (int i = 1; i < 2; i++)
+	for (int i = 1; i <= system->fGetManager()->fGetNumOfAgents(); i++)
 	{
-		system->fLoadAgent(new TcErrorDegradationTimeEstimator(true, false, "Configuration.json", "InfoDB", "Configuration", rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort, string("AG") + to_string(i-1), 4, i, "MAE", 40, 5, 3000, 4, 
-			chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)),  string("TestResult"), string("Prediction"), string("MAE-Degradation-Time-Estimator") + to_string(i), chrono::microseconds(1000000), chrono::high_resolution_clock::now(), TcAgent::Priority::High, false));
-			// TRANNE I PRIMI TRE RENDERE OPZIONALI TUTTI GLI ALTRI PARAMETRI, TUTTO VERRA' LETTO DA FILE DI CONFIGURAZIONE LOCALE
+		system->fLoadAgent(new TcErrorDegradationTimeEstimator(true, false, "Configuration.json", "InfoDB", "Configuration", rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort, string("AG") + to_string(i), 4, i, "MAE", 40, 5, 3000, 4, 
+			chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)),  string("TestResult"), string("Prediction"), string("MAE-Degradation-Time-Estimator") + to_string(i), chrono::microseconds(10000000), chrono::high_resolution_clock::now(), TcAgent::Priority::High, false));
 	}
 
-	//"../../../../../Configuration.json"
 	try{
 		thread cManagerThread;
 		system->fStartManager(&cManagerThread);

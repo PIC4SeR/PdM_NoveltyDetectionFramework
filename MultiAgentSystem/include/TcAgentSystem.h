@@ -33,7 +33,7 @@ class TcAgentSystem {
 		TcAgentSystem(string pSystemid, string pSystemname);
 		~TcAgentSystem();
 
-		void fLoadManager(string oManagerid, string pManagername, chrono::microseconds pScheduleminwaittime, chrono::microseconds pExecutionwaittime);
+		void fLoadManager(bool pLocalFileConfigEnable, bool pLocalConfigEnable, string pLocalConfigFile, string pDatabase, string pConfigurationCollection, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pManagerid, string pManagername, chrono::microseconds pScheduleminwaittime, chrono::microseconds pExecutionwaittime);
 
 		void fStartManager(thread* pManagerThread);
 		void fWaitManager(thread* pManagerThread);

@@ -7,6 +7,7 @@
 #include "../include/IMongoDriverAgentInterface.h"
 #include "../include/TcMongoDriver.h"
 #include "../include/Agent/ErrorDegradationTimeEstimatorAgent/TcErrorDegradationTimeEstimator.h"
+#include "../include/TcAgentManager.h"
 
 
 
@@ -81,6 +82,8 @@ int IMongoDriverAgentInterface::fGetLastErrors(list<double> *pErrors, list<long 
 	);
 
     if (rResult < 0) {
+        fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
         return(IMongoDriverAgentInterface::kQueryFails);
     }
 
@@ -95,15 +98,17 @@ int IMongoDriverAgentInterface::fGetLastErrors(list<double> *pErrors, list<long 
 	*pErrors = rErrors;
 	*pTimes = rTimes;
 
+    fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+	fflush(stdout);
 
     return(IMongoDriverAgentInterface::kGetSuccess);
 }
 
 
 
-int IMongoDriverAgentInterface::fInsertPrediction(string pDatabase, string pCollection, chrono::system_clock::time_point pAgentStartTime, long long pLastErrorTime, double pLastError, long long pPrediction, double pMcoefficient, double pQoffset, chrono::system_clock::time_point pStartTrainTime, chrono::system_clock::time_point pEndTrainTime, chrono::system_clock::time_point pEndPredictionTime, chrono::system_clock::time_point pPredictedTimeOfError, chrono::milliseconds pPredictedTimeToError, int pPredictor){
+int IMongoDriverAgentInterface::fInsertPrediction(string pDatabase, string pCollection, chrono::system_clock::time_point pAgentStartTime, long long pLastErrorTime, double pLastError, long long pPrediction, double pMcoefficient, double pQoffset, chrono::system_clock::time_point pStartTrainTime, chrono::system_clock::time_point pEndTrainTime, chrono::system_clock::time_point pEndPredictionTime, chrono::system_clock::time_point pPredictedTimeOfError, chrono::microseconds pPredictedTimeToError, int pPredictor){
 		bsoncxx::document::view_or_value cBsonDocument = bsoncxx::builder::stream::document{} 
-		<< TcErrorDegradationTimeEstimator::kActualErrorTime << bsoncxx::types::b_date{chrono::time_point<chrono::system_clock, chrono::milliseconds>(chrono::milliseconds(pLastErrorTime))}
+		<< TcErrorDegradationTimeEstimator::kActualErrorTime << bsoncxx::types::b_date{chrono::time_point<chrono::system_clock, chrono::microseconds>(chrono::microseconds(pLastErrorTime))}
 		<< TcErrorDegradationTimeEstimator::kAgentStartTime << bsoncxx::types::b_date{ pAgentStartTime }
 		<< TcErrorDegradationTimeEstimator::kTrainStartTime << bsoncxx::types::b_date{ pStartTrainTime }
 		<< TcErrorDegradationTimeEstimator::kTrainEndTime << bsoncxx::types::b_date{ pEndTrainTime }
@@ -127,7 +132,7 @@ int IMongoDriverAgentInterface::fInsertPrediction(string pDatabase, string pColl
         return(kInsert_Ok);
 }
 
-int IMongoDriverAgentInterface::fGetLastConfiguration(string pDatabase, string pCollection, string pSortattribute, string pAgentId, int *pNumSamplesRead, unsigned int *pPredictor, string *pPredictedErrorType, double *pPredictedErrorValue, double *pMinOperativeThresholdError, double *pMaxOperativeThresholdError, int *pMinNumOfRegrSamples, chrono::milliseconds *pPreventionThresholdTime, string *pTestResultCollection, string *pPredictionResultCollection, string *pConfigurationCollection, string *pDatabaseName, string *pMongoDriverRemoteConnectionType, string *pMongoDriverRemoteConnectionHost, uint16_t *pMongoDriverRemoteConnectionPort, string *pAgentID, string *pAgentname, chrono::microseconds *pStepRunTime, chrono::time_point<chrono::high_resolution_clock> *pNextRunTime, int *pPriority, atomic<bool> *pStopped)
+int IMongoDriverAgentInterface::fGetLastConfiguration(string pDatabase, string pCollection, string pSortattribute, string pAgentId, int *pNumSamplesRead, unsigned int *pPredictor, string *pPredictedErrorType, double *pPredictedErrorValue, double *pMinOperativeThresholdError, double *pMaxOperativeThresholdError, int *pMinNumOfRegrSamples, chrono::microseconds *pPreventionThresholdTime, string *pTestResultCollection, string *pPredictionResultCollection, string *pConfigurationCollection, string *pDatabaseName, string *pMongoDriverRemoteConnectionType, string *pMongoDriverRemoteConnectionHost, uint16_t *pMongoDriverRemoteConnectionPort, string *pAgentID, string *pAgentname, chrono::microseconds *pStepRunTime, chrono::time_point<chrono::high_resolution_clock> *pNextRunTime, int *pPriority, atomic<bool> *pStopped)
 {
     int rNumSamplesRead = 0;
     unsigned int rPredictor = 0;
@@ -136,7 +141,7 @@ int IMongoDriverAgentInterface::fGetLastConfiguration(string pDatabase, string p
     double rMinOperativeThresholdError = 0.00;
     double rMaxOperativeThresholdError = 0.00;
     int rMinNumOfRegrSamples = 0;
-    chrono::milliseconds cPreventionThresholdTime;
+    chrono::microseconds cPreventionThresholdTime;
     string rTestResultCollection = "";
     string rPredictionResultCollection = "";
     string rDatabaseName = "";
@@ -176,6 +181,8 @@ int IMongoDriverAgentInterface::fGetLastConfiguration(string pDatabase, string p
 	);
 
     if (rResult < 0) {
+        fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
         return(IMongoDriverAgentInterface::kGetConfigurationFails);
     }
 
@@ -201,7 +208,7 @@ int IMongoDriverAgentInterface::fGetLastConfiguration(string pDatabase, string p
             *pMinNumOfRegrSamples = cAgentConfiguration[TcErrorDegradationTimeEstimator::kkMinNumRegrSamples].get_int32().value;
             *pPredictedErrorValue = cAgentConfiguration[TcErrorDegradationTimeEstimator::kPredictedErrorValue].get_double().value;
 
-            *pPreventionThresholdTime = chrono::milliseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPreventionThresholdTime].get_int64().value);
+            *pPreventionThresholdTime = chrono::microseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPreventionThresholdTime].get_int64().value);
             *pPredictionResultCollection = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPredictionResultCollection].get_utf8().value.to_string());
             *pDatabaseName = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kDatabaseName].get_utf8().value.to_string());
             *pMongoDriverRemoteConnectionType = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kMongoDriverRemoteConnectionType].get_utf8().value.to_string());
@@ -209,21 +216,219 @@ int IMongoDriverAgentInterface::fGetLastConfiguration(string pDatabase, string p
             *pMongoDriverRemoteConnectionPort = cAgentConfiguration[TcErrorDegradationTimeEstimator::kMongoDriverRemoteConnectionPort].get_int32().value;
             *pAgentID = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kAgentId].get_utf8().value.to_string());
             *pAgentname = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kAgentName].get_utf8().value.to_string());
-            *pStepRunTime = chrono::milliseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kStepRunTime].get_int32().value);
+            *pStepRunTime = chrono::microseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kStepRunTime].get_int32().value);
             *pNextRunTime = chrono::high_resolution_clock::now();
             *pPriority = cAgentConfiguration[TcErrorDegradationTimeEstimator::kPriority].get_int32().value;
             (*pStopped).store(cAgentConfiguration[TcErrorDegradationTimeEstimator::kStopped].get_bool().value);
         }
         else {
+            fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		    fflush(stdout);
             return(IMongoDriverAgentInterface::kGetConfigurationFails);        
         }
+	}
+
+    fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+	fflush(stdout);
+    return(IMongoDriverAgentInterface::kGetConfigurationSuccess);
+}
+
+int IMongoDriverAgentInterface::fGetNumOfAgents(string pDatabase, string pCollection, string pSortattribute, int *pNumOfAgents)
+{
+    int rNumOfAgents = 0;
+    string rSortString;
+    string rAddFieldString;
+
+    list<string> cOutputList;
+	int rResult = 0;
+
+    fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+
+    if (pSortattribute == "") {
+        rSortString = "";
+    } else {
+        rSortString = "{ \"" + pSortattribute + "\" : -1 }";
+    }
+
+    rAddFieldString = "{ \"NumOfAgents\": { \"$size\": { \"$objectToArray\": \"$" + TcAgentManager::kAgentsConfigurationsKey + "\" } } } ";
+	rResult = this->cmMongoDriver->fRunQuery(&cOutputList, pDatabase, pCollection,
+									    "",
+										"",
+										rSortString,
+                                        0,
+										1,
+                                        "",
+                                        rAddFieldString
+	);
+
+    if (rResult < 0) {
+        return(IMongoDriverAgentInterface::kGetConfigurationFails);
+    }
+
+    for(string rConfiguration : cOutputList) {
+		bsoncxx::document::value cConfiguration = bsoncxx::from_json(rConfiguration);
+        *pNumOfAgents = (int) cConfiguration.view()[TcErrorDegradationTimeEstimator::kNumOfAgents].get_int32().value;
 	}
 
     return(IMongoDriverAgentInterface::kGetConfigurationSuccess);
 }
 
-int IMongoDriverAgentInterface::fGetDataMaxOf(string *pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pMaxattribute, string pGroupattribute, string pProjectionattribute){
+int IMongoDriverAgentInterface::fDatabaseExist(string pDatabase)
+{
+    
+	mongocxx::database cMongoDatabase;
+	int rResult = 0;
+
+	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+
+	string cMongoDriverRemoteConnectionString = this->cmMongoDriver->fGetMongoDriverConnectionType() + "://" + this->cmMongoDriver->fGetMongoDriverConnectionHost() + ":" + to_string(this->cmMongoDriver->fGetMongoDriverConnectionPort()) + "&heartbeat-frequency=3";
+	const mongocxx::uri& cMongoDriverConnectionUri{ bsoncxx::string::view_or_value(cMongoDriverRemoteConnectionString) };
+
+	mongocxx::client cMongoClient = mongocxx::client(cMongoDriverConnectionUri);
+	if (!cMongoClient) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Mongo client invalid" ANSI_COLOR_RESET "\n", __func__);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(TcMongoDriver::TcMongoError::TcMongoClient::kInvalidClient);
+	}
+
+	
+	if ((rResult = this->cmMongoDriver->fDatabaseExist(pDatabase, cMongoClient, false)) < 0) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database exist fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(rResult);
+	}
+
+
+    if(rResult == TcMongoDriver::TcMongoError::TcMongoDatabase::kCreated){
+        fprintf(stdout, ANSI_COLOR_RED "(%s) Database created, return code %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+
+    } else if(rResult == TcMongoDriver::TcMongoError::TcMongoDatabase::kExist){
+        fprintf(stdout, ANSI_COLOR_RED "(%s) Database exist, return code %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+    }
+    else if(rResult == TcMongoDriver::TcMongoError::TcMongoDatabase::kDoNotExist){
+        fprintf(stdout, ANSI_COLOR_RED "(%s) Database do not exist, return code %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+    }
+    else if(rResult == TcMongoDriver::TcMongoError::TcMongoDatabase::kIsEmpty){
+        fprintf(stdout, ANSI_COLOR_RED "(%s) Database exist but is empty, return code %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+    }
+    else if(rResult == TcMongoDriver::TcMongoError::TcMongoDatabase::kUnableToCreate){
+        fprintf(stdout, ANSI_COLOR_RED "(%s) Unable to create Database, return code %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+    }
+    else if(rResult == TcMongoDriver::TcMongoError::TcMongoDatabase::kInvalidDatabase){
+        fprintf(stdout, ANSI_COLOR_RED "(%s) Invalid Database name, return code %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+    }
+
+    return(rResult);
+    
+}
+
+
+int IMongoDriverAgentInterface::fCollectionExist(string pDatabase, string pCollection)
+{
+    
+	mongocxx::database cMongoDatabase;
+	mongocxx::collection cMongoCollection;
+	bsoncxx::document::view_or_value cQueryFilter;
+	bsoncxx::document::view_or_value cQueryProjection;
+	bsoncxx::document::view_or_value cQuerySortcriteria;
+	bsoncxx::document::view_or_value cQueryGroupcriteria;
+	bsoncxx::document::view_or_value cQueryAddFields;
+	mongocxx::pipeline cQueryPipeline;
 	list<string> cOutputList;
+	int rResult = 0;
+
+	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+
+	string cMongoDriverRemoteConnectionString = this->cmMongoDriver->fGetMongoDriverConnectionType() + "://" + this->cmMongoDriver->fGetMongoDriverConnectionHost() + ":" + to_string(this->cmMongoDriver->fGetMongoDriverConnectionPort()) + "&heartbeat-frequency=3";
+	const mongocxx::uri& cMongoDriverConnectionUri{ bsoncxx::string::view_or_value(cMongoDriverRemoteConnectionString) };
+
+	mongocxx::client cMongoClient = mongocxx::client(cMongoDriverConnectionUri);
+	if (!cMongoClient) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Mongo client invalid" ANSI_COLOR_RESET "\n", __func__);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(TcMongoDriver::TcMongoError::TcMongoClient::kInvalidClient);
+	}
+
+	
+	if ((rResult = this->cmMongoDriver->fDatabaseExist(pDatabase, cMongoClient)) < 0) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database exist fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(rResult);
+	}
+	
+
+	cMongoDatabase = cMongoClient[pDatabase];
+	if (!cMongoDatabase) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Mongo database invalid" ANSI_COLOR_RESET "\n", __func__);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(TcMongoDriver::TcMongoError::TcMongoDatabase::kInvalidDatabase);
+	}
+
+	
+	if ((rResult = this->cmMongoDriver->fCollectionExist(pCollection, cMongoDatabase)) < 0) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection exist fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		return(rResult);
+	}
+
+
+    if(rResult == TcMongoDriver::TcMongoError::TcMongoCollection::kCreated){
+        fprintf(stdout, ANSI_COLOR_RED "(%s) Collection created, return code %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+
+    } else if(rResult == TcMongoDriver::TcMongoError::TcMongoCollection::kExist){
+        fprintf(stdout, ANSI_COLOR_RED "(%s) Collection exist, return code %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+    }
+    else if(rResult == TcMongoDriver::TcMongoError::TcMongoCollection::kDoNotExist){
+        fprintf(stdout, ANSI_COLOR_RED "(%s) Collection do not exist, return code %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+    }
+    else if(rResult == TcMongoDriver::TcMongoError::TcMongoCollection::kIsEmpty){
+        fprintf(stdout, ANSI_COLOR_RED "(%s) Collection exist but is empty, return code %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+    }
+    else if(rResult == TcMongoDriver::TcMongoError::TcMongoCollection::kUnableToCreate){
+        fprintf(stdout, ANSI_COLOR_RED "(%s) Unable to create Collection, return code %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+    }
+    else if(rResult == TcMongoDriver::TcMongoError::TcMongoCollection::kInvalidCollection){
+        fprintf(stdout, ANSI_COLOR_RED "(%s) Invalid Collection name, return code %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+    }
+
+    return(rResult);
+    
+}
+
+int IMongoDriverAgentInterface::fGetDataMaxOf(string *pOutput, string pDatabase, string pCollection, string pSortattribute, int pLimit, string pMaxattribute, string pGroupattribute, string pProjectionattribute)
+{
+    list<string> cOutputList;
 	int rResult = 0;
     
     string rSortString;
@@ -1185,8 +1390,8 @@ int IMongoDriverAgentInterface::fGetDataBetweenTimePoints(list<string>* output, 
     
     cFilter = bsoncxx::builder::stream::document{} << betweenattribute
         << bsoncxx::builder::stream::open_document 
-        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeTo)) 
-        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeFrom)) 
+        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeTo)) 
+        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeFrom)) 
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
     
@@ -1239,7 +1444,7 @@ int IMongoDriverAgentInterface::fGetDataAfterTimePoint(list<string>* output, str
 
     cFilter = bsoncxx::builder::stream::document{} << compareattribute
         << bsoncxx::builder::stream::open_document
-        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeAfter))
+        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeAfter))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -1293,7 +1498,7 @@ int IMongoDriverAgentInterface::fGetDataBeforeTimePoint(list<string>* output, st
 
     cFilter = bsoncxx::builder::stream::document{} << compareattribute
         << bsoncxx::builder::stream::open_document
-        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeBefore))
+        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeBefore))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -1349,8 +1554,8 @@ int IMongoDriverAgentInterface::fGetDataMinBetweenTimePoints(string* output, str
 
     cFilter = bsoncxx::builder::stream::document{} << betweenattribute
         << bsoncxx::builder::stream::open_document
-        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeTo))
-        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeFrom))
+        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeTo))
+        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeFrom))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -1406,7 +1611,7 @@ int IMongoDriverAgentInterface::fGetDataMinAfterTimePoint(string* output, string
 
     cFilter = bsoncxx::builder::stream::document{} << compareattribute
         << bsoncxx::builder::stream::open_document
-        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeAfter))
+        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeAfter))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -1462,7 +1667,7 @@ int IMongoDriverAgentInterface::fGetDataMinBeforeTimePoint(string* output, strin
 
     cFilter = bsoncxx::builder::stream::document{} << compareattribute
         << bsoncxx::builder::stream::open_document
-        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeBefore))
+        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeBefore))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -1522,8 +1727,8 @@ int IMongoDriverAgentInterface::fGetDataMaxBetweenTimePoints(string* output, str
 
     cFilter = bsoncxx::builder::stream::document{} << betweenattribute
         << bsoncxx::builder::stream::open_document
-        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeTo))
-        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeFrom))
+        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeTo))
+        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeFrom))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -1576,7 +1781,7 @@ int IMongoDriverAgentInterface::fGetDataMaxAfterTimePoint(string* output, string
 
     cFilter = bsoncxx::builder::stream::document{} << compareattribute
         << bsoncxx::builder::stream::open_document
-        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeBefore))
+        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeBefore))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -1628,7 +1833,7 @@ int IMongoDriverAgentInterface::fGetDataMaxBeforeTimePoint(string* output, strin
 
     cFilter = bsoncxx::builder::stream::document{} << compareattribute
         << bsoncxx::builder::stream::open_document
-        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeBefore))
+        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeBefore))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -1680,8 +1885,8 @@ int IMongoDriverAgentInterface::fGetDataSumBetweenTimePoints(string* output, str
 
     cFilter = bsoncxx::builder::stream::document{} << betweenattribute
         << bsoncxx::builder::stream::open_document
-        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeTo))
-        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeFrom))
+        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeTo))
+        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeFrom))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -1732,7 +1937,7 @@ int IMongoDriverAgentInterface::fGetDataSumAfterTimePoint(string* output, string
 
     cFilter = bsoncxx::builder::stream::document{} << compareattribute
         << bsoncxx::builder::stream::open_document
-        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeAfter))
+        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeAfter))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -1787,7 +1992,7 @@ int IMongoDriverAgentInterface::fGetDataSumBeforeTimePoint(string* output, strin
 
     cFilter = bsoncxx::builder::stream::document{} << compareattribute
         << bsoncxx::builder::stream::open_document
-        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeBefore))
+        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeBefore))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -1844,8 +2049,8 @@ int IMongoDriverAgentInterface::fGetDataAvgBetweenTimePoints(string* output, str
 
     cFilter = bsoncxx::builder::stream::document{} << betweenattribute
         << bsoncxx::builder::stream::open_document
-        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeTo))
-        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeFrom))
+        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeTo))
+        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeFrom))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -1900,7 +2105,7 @@ int IMongoDriverAgentInterface::fGetDataAvgAfterTimePoint(string* output, string
 
     cFilter = bsoncxx::builder::stream::document{} << compareattribute
         << bsoncxx::builder::stream::open_document
-        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeAfter))
+        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeAfter))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -1955,7 +2160,7 @@ int IMongoDriverAgentInterface::fGetDataAvgBeforeTimePoint(string* output, strin
 
     cFilter = bsoncxx::builder::stream::document{} << compareattribute
         << bsoncxx::builder::stream::open_document
-        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeBefore))
+        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeBefore))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -2014,8 +2219,8 @@ int IMongoDriverAgentInterface::fGetDataCountBetweenTimePoints(string* output, s
 
     cFilter = bsoncxx::builder::stream::document{} << betweenattribute
         << bsoncxx::builder::stream::open_document
-        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeTo))
-        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeFrom))
+        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeTo))
+        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeFrom))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -2063,7 +2268,7 @@ int IMongoDriverAgentInterface::fGetDataCountAfterTimePoint(string* output, stri
 
     cFilter = bsoncxx::builder::stream::document{} << compareattribute
         << bsoncxx::builder::stream::open_document
-        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeAfter))
+        << "$gt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeAfter))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 
@@ -2114,7 +2319,7 @@ int IMongoDriverAgentInterface::fGetDataCountBeforeTimePoint(string* output, str
 
     cFilter = bsoncxx::builder::stream::document{} << compareattribute
         << bsoncxx::builder::stream::open_document
-        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::milliseconds>(cConvertedTimeBefore))
+        << "$lt" << bsoncxx::types::b_date(chrono::time_point_cast<chrono::microseconds>(cConvertedTimeBefore))
         << bsoncxx::builder::stream::close_document
         << bsoncxx::builder::stream::finalize;
 

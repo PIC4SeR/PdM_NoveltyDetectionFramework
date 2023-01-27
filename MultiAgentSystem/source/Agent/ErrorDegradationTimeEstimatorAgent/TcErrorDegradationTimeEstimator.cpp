@@ -9,8 +9,10 @@
 #include <string>
 #include <algorithm>    // For std::remove()
 
-TcErrorDegradationTimeEstimator::TcErrorDegradationTimeEstimator(bool pLocalFileConfigEnable, bool pLocalConfigEnable, string pLocalConfigFile, string pDatabaseName, string pConfigurationCollection, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pAgentID, int pNumSamplesRead, unsigned int pPredictor, string pPredictedErrorType, double pPredictedErrorValue, double pMinOperativeThresholdError, double pMaxOperativeThresholdError, int pMinNumOfRegrSamples, chrono::milliseconds pPreventionThresholdTime, string pTestResultCollection, string pPredictionResultCollection, string pAgentname, chrono::microseconds pStepRunTime, chrono::time_point<chrono::high_resolution_clock> pNextRunTime, TcAgent::Priority pPriority, bool pStopped) : TcAgent(pDatabaseName, pMongoDriverRemoteConnectionType, pMongoDriverRemoteConnectionHost, pMongoDriverRemoteConnectionPort, pAgentID, pAgentname, pStepRunTime, pNextRunTime, pPriority, pStopped)
+TcErrorDegradationTimeEstimator::TcErrorDegradationTimeEstimator(bool pLocalFileConfigEnable, bool pLocalConfigEnable, string pLocalConfigFile, string pDatabaseName, string pConfigurationCollection, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pAgentID, int pNumSamplesRead, unsigned int pPredictor, string pPredictedErrorType, double pPredictedErrorValue, double pMinOperativeThresholdError, double pMaxOperativeThresholdError, int pMinNumOfRegrSamples, chrono::microseconds pPreventionThresholdTime, string pTestResultCollection, string pPredictionResultCollection, string pAgentname, chrono::microseconds pStepRunTime, chrono::time_point<chrono::high_resolution_clock> pNextRunTime, TcAgent::Priority pPriority, bool pStopped)
 {
+	int rResult = 0;
+
 	if (pLocalConfigEnable)
 	{
 		TcAgent(pDatabaseName, pMongoDriverRemoteConnectionType, pMongoDriverRemoteConnectionHost, pMongoDriverRemoteConnectionPort, pAgentID, pAgentname, pStepRunTime, pNextRunTime, pPriority, pStopped);
@@ -22,41 +24,82 @@ TcErrorDegradationTimeEstimator::TcErrorDegradationTimeEstimator(bool pLocalFile
 		this->rmMaxOperativeThresholdError = pMaxOperativeThresholdError;
 		this->rmMinNumOfRegrSamples = pMinNumOfRegrSamples;
 		this->rmNotificationPreventionThresholdTime = pPreventionThresholdTime;
-		this->rmLastSampleTime = chrono::time_point<chrono::system_clock, chrono::milliseconds>(chrono::milliseconds(0));
-		this->rmLastPredictedTimeToError = chrono::milliseconds(0);
+		this->rmLastSampleTime = chrono::time_point<chrono::system_clock, chrono::microseconds>(chrono::microseconds(0));
+		this->rmLastPredictedTimeToError = chrono::microseconds(0);
 		this->rmLastPredictedTimeToErrorTime = chrono::system_clock::now();
 		this->rmTestResultCollection = pTestResultCollection;
 		this->rmPredictionResultCollection = pPredictionResultCollection;
 		this->rmConfigurationCollection = pConfigurationCollection;
 		this->rmConfigurationFile = pLocalConfigFile;
-	}
-	else if (pLocalFileConfigEnable)
-	{
+		this->rmLocalConfigEnable = pLocalConfigEnable;
+		this->rmLocalFileConfigEnable = pLocalFileConfigEnable;
+	} else {
+		this->rmDatabaseName = pDatabaseName;
+		this->rmLocalConfigEnable = pLocalConfigEnable;
+		this->rmLocalFileConfigEnable = pLocalFileConfigEnable;
 		this->rmConfigurationFile = pLocalConfigFile;
 		this->rmAgentID = pAgentID;
-		// Get Last Agent Configuration
-		int rResult = 0;
-		if ((rResult = this->fGetLastConfigurationFromFile()) < 0)
-		{
-			fprintf(stdout, ANSI_COLOR_RED "(%s) Get configuration data from file fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
-			fflush(stdout);
-		}
-	}
-	else
-	{
-		// Get Last Agent Configuration
-		int rResult = 0;
 		this->rmConfigurationCollection = pConfigurationCollection;
-		this->rmAgentID = pAgentID;
-		if ((rResult = this->fGetLastConfigurationFromDatabase()) < 0)
+		// Get Last Agent Configuration
+		if ((rResult = this->fGetConfiguration()) < 0)
 		{
-			fprintf(stdout, ANSI_COLOR_RED "(%s) Get configuration data from database fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+			fprintf(stdout, ANSI_COLOR_RED "(%s) Get configuration data fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
 			fflush(stdout);
 		}
 	}
+
+	if ((rResult = this->cmMongoInterface->fDatabaseExist(pDatabaseName)) < 0) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Database exist fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+	}
+	
+	if ((rResult = this->cmMongoInterface->fCollectionExist(pDatabaseName, pConfigurationCollection)) < 0) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection exist fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+	}
+
+	if ((rResult = this->cmMongoInterface->fCollectionExist(pDatabaseName, pTestResultCollection)) < 0) {
+		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection exist fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+	}
+	
 }
 
 TcErrorDegradationTimeEstimator::~TcErrorDegradationTimeEstimator() { ; }
+
+
+int TcErrorDegradationTimeEstimator::fGetConfiguration(){
+	if (!this->rmLocalConfigEnable && this->rmLocalFileConfigEnable)
+		{
+			// Get Last Agent Configuration
+			int rResult = 0;
+			if ((rResult = this->fGetLastConfigurationFromFile()) < 0)
+			{
+				fprintf(stdout, ANSI_COLOR_RED "(%s) Get configuration data from file fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+				fflush(stdout);
+				return(TcErrorDegradationTimeEstimator::TcError::TcGetConfigurationErrors::kFail);
+			}
+		} else if(!this->rmLocalConfigEnable && !this->rmLocalFileConfigEnable) {
+			// Get Last Agent Configuration
+			int rResult = 0;
+			if ((rResult = this->fGetLastConfigurationFromDatabase()) < 0)
+			{
+				fprintf(stdout, ANSI_COLOR_RED "(%s) Get configuration data from database fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+				fflush(stdout);
+				return(TcErrorDegradationTimeEstimator::TcError::TcGetConfigurationErrors::kFail);
+			}
+		}
+		return(TcErrorDegradationTimeEstimator::TcError::TcGetConfigurationErrors::kSuccess);
+}
+
 
 int TcErrorDegradationTimeEstimator::fRun()
 {
@@ -74,15 +117,28 @@ int TcErrorDegradationTimeEstimator::fRun()
 		chrono::system_clock::time_point cEndTrainTime;
 		chrono::system_clock::time_point rEndPredictionTime;
 		chrono::system_clock::time_point rPredictedTimeOfError;
-		chrono::milliseconds cPredictedTimeToError;
+		chrono::microseconds cPredictedTimeToError;
 
 		chrono::system_clock::time_point cAgentStartTime = chrono::system_clock::now();
 
 		fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
 		fflush(stdout);
 
+		fprintf(stdout, "(%s) Get Agent Configuration\n", __func__);
+		fflush(stdout);
+
+		//Get Configuration for this Agent
+		if ((rResult = this->fGetConfiguration()) < 0)
+		{
+			fprintf(stdout, ANSI_COLOR_RED "(%s) Get configuration data fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+			fflush(stdout);
+		}
+
+		fprintf(stdout, "(%s) Get Last Errors\n", __func__);
+		fflush(stdout);
+
 		// Get Last Errors to evaluate
-		rResult = fGetLastErrors(&rTimes, &rErrors);
+		rResult = this->fGetLastErrors(&rTimes, &rErrors);
 		if (rResult < 0)
 		{
 			fprintf(stdout, ANSI_COLOR_RED "(%s) Get data from database fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
@@ -91,6 +147,9 @@ int TcErrorDegradationTimeEstimator::fRun()
 			fflush(stdout);
 			return (kRunFails);
 		}
+
+		fprintf(stdout, "(%s) Verify samples read\n", __func__);
+		fflush(stdout);
 
 		if (rTimes.size() <= 0 || rTimes.size() > 0 && rTimes.front() * 10000 <= this->rmLastSampleTime.time_since_epoch().count())
 		{
@@ -101,7 +160,10 @@ int TcErrorDegradationTimeEstimator::fRun()
 			return (kRunFails);
 		}
 
-		this->rmLastSampleTime = chrono::time_point<chrono::system_clock, chrono::milliseconds>(chrono::milliseconds(rTimes.front()));
+		fprintf(stdout, "(%s) Update last sample read\n", __func__);
+		fflush(stdout);
+
+		this->rmLastSampleTime = chrono::time_point<chrono::system_clock, chrono::microseconds>(chrono::microseconds(rTimes.front()));
 
 		// Last Error Sample Value lower than a Minimum Error Threshold
 		if (rErrors.size() > 0 && rErrors.front() < this->rmMinOperativeThresholdError)
@@ -116,7 +178,7 @@ int TcErrorDegradationTimeEstimator::fRun()
 		}
 		else
 		{
-			// Time and Samples data have not the same size (no linreg possible) or are both null
+			// Time and Samples data have not the same size (no linreg is possible) or are both null
 			if (rTimes.size() != rErrors.size() || (!rTimes.size() && !rErrors.size()))
 			{
 				fprintf(stdout, ANSI_COLOR_RED "(%s) Times and Samples Data invalid sizes, prediction will be skipped" ANSI_COLOR_RESET "\n", __func__);
@@ -133,9 +195,10 @@ int TcErrorDegradationTimeEstimator::fRun()
 			}
 			else
 			{
+				fprintf(stdout, ANSI_COLOR_YELLOW "(%s) Time to Error Prediction\n" ANSI_COLOR_RESET, __func__);
+				fflush(stdout);
 
 				this->fMakePrediction(rTimes, rErrors, &rPrediction, &rMcoefficient, &rQoffset, &cStartTrainTime, &cEndTrainTime, &rEndPredictionTime, &rPredictedTimeOfError, &cPredictedTimeToError);
-
 				if ((rResult = this->fNotifyPrediction(cAgentStartTime, rTimes.front(), rErrors.front(), rPrediction, rMcoefficient, rQoffset, cStartTrainTime, cEndTrainTime, rEndPredictionTime, rPredictedTimeOfError, cPredictedTimeToError)) < 0)
 				{
 					fprintf(stdout, ANSI_COLOR_RED "(%s) Notify prediction fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
@@ -158,10 +221,10 @@ int TcErrorDegradationTimeEstimator::fRun()
 		fflush(stdout);
 
 		return (kRunSuccess);
-	}
-	catch (exception e)
-	{
-		printf("Catched exception - Message %s\n", e.what());
+	} catch (exception e) {
+		fprintf(stdout, "Catched exception - Message %s\n", e.what());
+		fflush(stdout);
+		fprintf(stdout, "Exit from Agents\n");
 		fflush(stdout);
 		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
 		fflush(stdout);
@@ -208,7 +271,8 @@ int TcErrorDegradationTimeEstimator::fGetLastConfigurationFromDatabase()
 																 &(this->rmNumSamplesRead), &(this->rmPredictor), &(this->rmPredictedErrorType), &(this->rmPredictedErrorValue),
 																 &(this->rmMinOperativeThresholdError), &(this->rmMaxOperativeThresholdError), &(this->rmMinNumOfRegrSamples),
 																 &(this->rmNotificationPreventionThresholdTime), &(this->rmTestResultCollection), &(this->rmPredictionResultCollection),
-																 &(this->rmConfigurationCollection), &(this->rmDatabaseName), &(this->rmMongoDriverRemoteConnectionType), &(this->rmMongoDriverRemoteConnectionHost), &(this->rmMongoDriverRemoteConnectionPort), &(this->rmAgentID), &(this->rmAgentName),
+																 &(this->rmConfigurationCollection), &(this->rmDatabaseName), &(this->rmMongoDriverRemoteConnectionType), &(this->rmMongoDriverRemoteConnectionHost),
+																 &(this->rmMongoDriverRemoteConnectionPort), &(this->rmAgentID), &(this->rmAgentName),
 																 &(this->cmStepRunTime), &(this->cmNextRunTime), &(rAgentPriority), &(this->cmStopped)) < 0))
 	{
 		fprintf(stdout, ANSI_COLOR_RED "(%s) Get data from database fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
@@ -217,6 +281,7 @@ int TcErrorDegradationTimeEstimator::fGetLastConfigurationFromDatabase()
 	}
 
 	this->cmRunPriority = IAgent::Priority(rAgentPriority);
+	this->cmMongoInterface = new IMongoDriverAgentInterface("Agent DB Application Interface", this->rmMongoDriverRemoteConnectionType, this->rmMongoDriverRemoteConnectionHost, this->rmMongoDriverRemoteConnectionPort);
 
 	fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
 	fflush(stdout);
@@ -239,7 +304,6 @@ int TcErrorDegradationTimeEstimator::fGetLastConfigurationFromFile()
                  std::istreambuf_iterator<char>());;
 	rJsonString.erase(remove(rJsonString.begin(), rJsonString.end(), '\t'), rJsonString.end());
 	rJsonString.erase(remove(rJsonString.begin(), rJsonString.end(), '\n'), rJsonString.end());	
-	string text = "{ \"a\": 2, \"step_run_time\": {\"$numberLong\": \"1000\"} }";
 	bsoncxx::document::value cConfiguration = bsoncxx::from_json(rJsonString);
 	this->rmTestResultCollection = string(cConfiguration.view()[TcErrorDegradationTimeEstimator::kTestResultCollection].get_utf8().value.to_string());
 	this->rmConfigurationCollection = string(cConfiguration.view()[TcErrorDegradationTimeEstimator::kConfigurationCollection].get_utf8().value.to_string());
@@ -255,9 +319,7 @@ int TcErrorDegradationTimeEstimator::fGetLastConfigurationFromFile()
 		this->rmMaxOperativeThresholdError = (double)cAgentConfiguration[TcErrorDegradationTimeEstimator::kMaxOpeThresholdError].get_double().value;
 		this->rmMinNumOfRegrSamples = (double) cAgentConfiguration[TcErrorDegradationTimeEstimator::kkMinNumRegrSamples].get_int32().value;
 		this->rmPredictedErrorValue = cAgentConfiguration[TcErrorDegradationTimeEstimator::kPredictedErrorValue].get_double().value;
-
-		this->rmNotificationPreventionThresholdTime = chrono::milliseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPreventionThresholdTime].get_int32().value);
-
+		this->rmNotificationPreventionThresholdTime = chrono::microseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPreventionThresholdTime].get_int32().value);
 		this->rmPredictionResultCollection = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPredictionResultCollection].get_utf8().value.to_string());
 		this->rmDatabaseName = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kDatabaseName].get_utf8().value.to_string());
 		this->rmMongoDriverRemoteConnectionType = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kMongoDriverRemoteConnectionType].get_utf8().value.to_string());
@@ -265,10 +327,11 @@ int TcErrorDegradationTimeEstimator::fGetLastConfigurationFromFile()
 		this->rmMongoDriverRemoteConnectionPort = cAgentConfiguration[TcErrorDegradationTimeEstimator::kMongoDriverRemoteConnectionPort].get_int32().value;
 		this->rmAgentID = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kAgentId].get_utf8().value.to_string());
 		this->rmAgentName = string(cAgentConfiguration[TcErrorDegradationTimeEstimator::kAgentName].get_utf8().value.to_string());
-		this->cmStepRunTime = chrono::milliseconds(cAgentConfiguration[TcErrorDegradationTimeEstimator::kStepRunTime].get_int32().value);
+		this->cmStepRunTime = chrono::microseconds((int) cAgentConfiguration[TcErrorDegradationTimeEstimator::kStepRunTime].get_int32().value);
 		this->cmNextRunTime = chrono::high_resolution_clock::now();
 		this->cmRunPriority = IAgent::Priority(cAgentConfiguration[TcErrorDegradationTimeEstimator::kPriority].get_int32().value);
 		this->cmStopped.store(cAgentConfiguration[TcErrorDegradationTimeEstimator::kStopped].get_bool().value);
+		this->cmMongoInterface = new IMongoDriverAgentInterface("Agent DB Application Interface", this->rmMongoDriverRemoteConnectionType, this->rmMongoDriverRemoteConnectionHost, this->rmMongoDriverRemoteConnectionPort);
 	}
 	else
 	{
@@ -281,7 +344,7 @@ int TcErrorDegradationTimeEstimator::fGetLastConfigurationFromFile()
 	return (kGetDataSuccess);
 }
 
-void TcErrorDegradationTimeEstimator::fMakePrediction(list<long long> pTimes, list<double> pErrors, long long *pPrediction, double *pMcoefficient, double *pQoffset, chrono::system_clock::time_point *pStartTrainTime, chrono::system_clock::time_point *pEndTrainTime, chrono::system_clock::time_point *pEndPredictionTime, chrono::system_clock::time_point *pPredictedTimeOfError, chrono::milliseconds *pPredictedTimeToError)
+void TcErrorDegradationTimeEstimator::fMakePrediction(list<long long> pTimes, list<double> pErrors, long long *pPrediction, double *pMcoefficient, double *pQoffset, chrono::system_clock::time_point *pStartTrainTime, chrono::system_clock::time_point *pEndTrainTime, chrono::system_clock::time_point *pEndPredictionTime, chrono::system_clock::time_point *pPredictedTimeOfError, chrono::microseconds *pPredictedTimeToError)
 {
 	TcLinearRegressor<double, long long> lr;
 	double rError = this->rmPredictedErrorValue;
@@ -295,8 +358,8 @@ void TcErrorDegradationTimeEstimator::fMakePrediction(list<long long> pTimes, li
 	chrono::system_clock::time_point cEndTrainTime = chrono::system_clock::now();
 	lr.fPredict(rError, &rPrediction);
 
-	chrono::system_clock::time_point cPredictedTimeOfError = chrono::time_point<chrono::system_clock, chrono::milliseconds>(chrono::milliseconds(rPrediction));
-	chrono::milliseconds cPredictedTimeToError = chrono::duration_cast<chrono::hours>(cPredictedTimeOfError - chrono::system_clock::now());
+	chrono::system_clock::time_point cPredictedTimeOfError = chrono::time_point<chrono::system_clock, chrono::microseconds>(chrono::microseconds(rPrediction));
+	chrono::microseconds cPredictedTimeToError = chrono::duration_cast<chrono::hours>(cPredictedTimeOfError - chrono::system_clock::now());
 	chrono::system_clock::time_point cEndPredictTime = chrono::system_clock::now();
 
 	*pPrediction = rPrediction;
@@ -311,7 +374,7 @@ void TcErrorDegradationTimeEstimator::fMakePrediction(list<long long> pTimes, li
 	return;
 }
 
-int TcErrorDegradationTimeEstimator::fNotifyPrediction(chrono::system_clock::time_point pAgentStartTime, long long pLastErrorTime, double pLastError, long long pPrediction, double pMcoefficient, double pQoffset, chrono::system_clock::time_point pStartTrainTime, chrono::system_clock::time_point pEndTrainTime, chrono::system_clock::time_point pEndPredictionTime, chrono::system_clock::time_point pPredictedTimeOfError, chrono::milliseconds pPredictedTimeToError)
+int TcErrorDegradationTimeEstimator::fNotifyPrediction(chrono::system_clock::time_point pAgentStartTime, long long pLastErrorTime, double pLastError, long long pPrediction, double pMcoefficient, double pQoffset, chrono::system_clock::time_point pStartTrainTime, chrono::system_clock::time_point pEndTrainTime, chrono::system_clock::time_point pEndPredictionTime, chrono::system_clock::time_point pPredictedTimeOfError, chrono::microseconds pPredictedTimeToError)
 {
 
 	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
@@ -371,3 +434,30 @@ const string TcErrorDegradationTimeEstimator::kPriority = "priority";
 const string TcErrorDegradationTimeEstimator::kStopped = "stopped";
 const string TcErrorDegradationTimeEstimator::kConfigurationAgents = "agents";
 const string TcErrorDegradationTimeEstimator::kConfTimestamp = "timestamp";
+const string TcErrorDegradationTimeEstimator::kNumOfAgents = "NumOfAgents";
+const string TcErrorDegradationTimeEstimator::kDefaultDatabase = "InfoDB";
+const bool TcErrorDegradationTimeEstimator::kDefaultLocalConfigurationEnable = false;
+const bool TcErrorDegradationTimeEstimator::kDefaultConfigurationFileEnable = true;
+const string TcErrorDegradationTimeEstimator::kDefaultDatabaseConnectionType = "mongodb";
+const string TcErrorDegradationTimeEstimator::kDefaultDatabaseConnectionHost = "127.0.0.1";
+const uint16_t TcErrorDegradationTimeEstimator::kDefaultDatabaseConnectionPort = (uint16_t) 27017;
+
+const string TcErrorDegradationTimeEstimator::kDefaultConfigurationCollection = "Configuration";
+const string TcErrorDegradationTimeEstimator::kDefaultTestResultCollection = "TestResult";
+const string TcErrorDegradationTimeEstimator::kDefaultPredictionResultCollection = "Prediction";
+
+const string TcErrorDegradationTimeEstimator::kDefaultConfigurationSortingAttribute = "timestamp";
+const string TcErrorDegradationTimeEstimator::kDefaultConfigurationFile = "../../Configuration.json";
+const string TcErrorDegradationTimeEstimator::kAgentsConfigurationsKey = "agents";
+
+const string TcErrorDegradationTimeEstimator::kDefaultAgentId = "AG0";
+const string TcErrorDegradationTimeEstimator::kDefaultAgentName = "Agent 0";
+const uint64_t TcErrorDegradationTimeEstimator::kDefaultStepRunTime = (uint64_t) 1000;
+const uint64_t TcErrorDegradationTimeEstimator::kDefaultPreventionThresholdTime = (uint64_t) 5000;
+const int TcErrorDegradationTimeEstimator::kDefaultNumSamplesRead = 10;
+const unsigned int TcErrorDegradationTimeEstimator::kDefaultPredictor = 0;
+const string TcErrorDegradationTimeEstimator::kDefaultPredictedErrorType = "MSE";
+const double TcErrorDegradationTimeEstimator::kDefaultPredictedErrorValue = 100;
+const double TcErrorDegradationTimeEstimator::kDefaultMinOperativeThresholdError = 10;
+const double TcErrorDegradationTimeEstimator::kDefaultMaxOperativeThresholdError = 80;
+const int TcErrorDegradationTimeEstimator::kDefaultMinNumOfRegrSamples = 10;

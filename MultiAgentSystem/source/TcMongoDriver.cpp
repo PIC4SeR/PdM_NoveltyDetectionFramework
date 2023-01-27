@@ -110,11 +110,12 @@ int TcMongoDriver::fCollectionExist(string pCollection, mongocxx::database pMong
 		fflush(stdout);
 
 		bsoncxx::string::view_or_value cCollectionName = bsoncxx::string::view_or_value(pCollection);
-		return(TcMongoError::TcMongoCollection::kExist);
 
 		if (!pMongoDatabase.has_collection(cCollectionName) && pCreate) {
 			try {
 				pMongoDatabase.create_collection(cCollectionName);
+				fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+				fflush(stdout);
 				return(kCollectionExist_Ok);
 			} catch (mongocxx::operation_exception oe) {
 				fprintf(stdout, ANSI_COLOR_RED "(%s) Catched mongocxx::operation_exception - Message %s Value %d Category %s" ANSI_COLOR_RESET "\n", __func__, oe.code().message().c_str(), oe.code().value(), oe.code().category().name());
@@ -453,7 +454,7 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
 	fflush(stdout);
 
-	string cMongoDriverRemoteConnectionString = this->rmMongoDriverRemoteConnectionType + "://" + this->rmMongoDriverRemoteConnectionHost + ":" + to_string(this->rmMongoDriverRemoteConnectionPort);
+	string cMongoDriverRemoteConnectionString = this->rmMongoDriverRemoteConnectionType + "://" + this->rmMongoDriverRemoteConnectionHost + ":" + to_string(this->rmMongoDriverRemoteConnectionPort) + "&heartbeat-frequency=3";
 	const mongocxx::uri& cMongoDriverConnectionUri{ bsoncxx::string::view_or_value(cMongoDriverRemoteConnectionString) };
 
 	mongocxx::client cMongoClient = mongocxx::client(cMongoDriverConnectionUri);
@@ -465,7 +466,7 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 		return(TcMongoError::TcMongoClient::kInvalidClient);
 	}
 
-
+	
 	if ((rResult = fDatabaseExist(pDatabase, cMongoClient)) < 0) {
 		fprintf(stdout, ANSI_COLOR_RED "(%s) Database exist fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
 		fflush(stdout);
@@ -475,6 +476,7 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 		fflush(stdout);
 		return(rResult);
 	}
+	
 
 	cMongoDatabase = cMongoClient[pDatabase];
 	if (!cMongoDatabase) {
@@ -485,7 +487,7 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 		return(TcMongoError::TcMongoDatabase::kInvalidDatabase);
 	}
 
-
+	
 	if ((rResult = fCollectionExist(pCollection, cMongoDatabase)) < 0) {
 		fprintf(stdout, ANSI_COLOR_RED "(%s) Collection exist fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
 		fflush(stdout);
@@ -670,6 +672,20 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 	fflush(stdout);
 
 	return(TcMongoError::TcMongoQuery::kSuccess);
+}
+
+
+
+string TcMongoDriver::fGetMongoDriverConnectionHost(){
+	return(this->rmMongoDriverRemoteConnectionHost);
+}
+
+string TcMongoDriver::fGetMongoDriverConnectionType(){
+	return(this->rmMongoDriverRemoteConnectionType);
+}
+
+uint16_t TcMongoDriver::fGetMongoDriverConnectionPort(){
+	return(this->rmMongoDriverRemoteConnectionPort);
 }
 
 

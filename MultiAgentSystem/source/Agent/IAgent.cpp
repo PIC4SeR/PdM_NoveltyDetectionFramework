@@ -45,7 +45,7 @@ IAgent::IAgent(IAgent&& other) {
 	other.rmAgentID = "";
 	other.rmAgentName = "";
 	other.cmRunPriority = Priority::Medium;
-	other.cmStopped = false;
+	other.cmStopped.store(false);
 	other.cmStepRunTime = chrono::microseconds(0);
 	other.cmLastRunTime = chrono::time_point<chrono::high_resolution_clock>();
 	other.cmNextRunTime = chrono::time_point<chrono::high_resolution_clock>();
@@ -165,7 +165,7 @@ chrono::microseconds IAgent::fWaitFor(){
 }
 
 bool IAgent::fRunnable() {
-	return(!cmStopped);
+	return(!cmStopped.load());
 }
 
 bool IAgent::fReady() {

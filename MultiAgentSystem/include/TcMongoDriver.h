@@ -7,7 +7,7 @@
 #define TCMONGODRIVER_H
 
 
-#define MONGO_DEFAULT_PORT 50085
+#define MONGO_DEFAULT_PORT 27017
 #define MONGO_DEFAULT_HOST "localhost"
 #define MONGO_DEFAULT_CONNTYPE "mongodb"
 #define MONGO_DRIVER_NAME "SpeaMongoDriver"
@@ -73,59 +73,6 @@ class TcMongoDriver
 {
 	private:
 
-		class TcMongoError{
-			public:
-				class TcMongoConnection {
-        			public:
-            			static const int kNotConnected = -1;
-        		};
-				class TcMongoUri {
-        			public:
-            			static const int kNotConnected = -1;
-        		};
-				class TcMongoCursor {
-        			public:
-            			static const int kNotConnected = -1;
-        		};
-
-				class TcMongoQuery {
-        			public:
-            			static const int kSuccess = 0;
-						static const int kQueryFail = -1;
-        		};
-				class TcMongoInsert {
-        			public:
-            			static const int kSuccess = 0;
-						static const int kInsertionFails = -1;
-        		};
-        		class TcMongoClient {
-        			public:
-            			static const int kInvalidClient = -1;
-        		};
-				class TcMongoDatabase {
-        			public:
-						static const int kCreated = 1;
-						static const int kExist = 0;
-            			static const int kDoNotExist = -1;
-						static const int kIsEmpty = -2;
-						static const int kUnableToCreate = -3;
-						static const int kInvalidDatabase = -4;
-
-        		};
-				class TcMongoCollection {
-        			public:
-            			static const int kCreated = 1;
-						static const int kExist = 0;
-            			static const int kDoNotExist = -1;
-						static const int kIsEmpty = -2;
-						static const int kUnableToCreate = -3;
-						static const int kInvalidCollection = -4;
-
-        		};
-		};
-
-
-
 		#pragma region Internal class Attributes
 			inline static mongocxx::instance cmMongoDriverInstance = mongocxx::instance();
 		#pragma endregion
@@ -137,11 +84,66 @@ class TcMongoDriver
 		#pragma endregion
 
 	public:
+		class TcMongoError{
+				public:
+					class TcMongoConnection {
+						public:
+							static const int kNotConnected = -1;
+					};
+					class TcMongoUri {
+						public:
+							static const int kNotConnected = -1;
+					};
+					class TcMongoCursor {
+						public:
+							static const int kNotConnected = -1;
+					};
+
+					class TcMongoQuery {
+						public:
+							static const int kSuccess = 0;
+							static const int kQueryFail = -1;
+					};
+					class TcMongoInsert {
+						public:
+							static const int kSuccess = 0;
+							static const int kInsertionFails = -1;
+					};
+					class TcMongoClient {
+						public:
+							static const int kInvalidClient = -1;
+					};
+					class TcMongoDatabase {
+						public:
+							static const int kCreated = 1;
+							static const int kExist = 0;
+							static const int kDoNotExist = -1;
+							static const int kIsEmpty = -2;
+							static const int kUnableToCreate = -3;
+							static const int kInvalidDatabase = -4;
+
+					};
+					class TcMongoCollection {
+						public:
+							static const int kCreated = 1;
+							static const int kExist = 0;
+							static const int kDoNotExist = -1;
+							static const int kIsEmpty = -2;
+							static const int kUnableToCreate = -3;
+							static const int kInvalidCollection = -4;
+
+					};
+			};
 		#pragma region External Functions
 
 				TcMongoDriver(string pMongoDriverName, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort);
 				TcMongoDriver();
 				~TcMongoDriver();
+
+
+				string fGetMongoDriverConnectionHost();
+				string fGetMongoDriverConnectionType();
+				uint16_t fGetMongoDriverConnectionPort();
 
 				/**
 				* Verify if a the given Database exists. If it does not exists, it will be created.

@@ -6,26 +6,69 @@
 #include <algorithm>
 #include <optional>
 
+
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <algorithm>    // For std::remove()
+
+#include "../include/IMongoDriverAgentInterface.h"
+
 #define MINWAIT(a,b) (a.count() < b.count() ? a : b)
 
 using namespace std;
 
 TcAgentManager::TcAgentManager(){
-	
 	this->cmAgents = new list<IAgent*>();
 	this->cmAgentshistory = new map<IAgent*, boost::circular_buffer<TcAgentStatus*>*>();
 	this->cmScheduleminwaittime = chrono::microseconds(1000000);
 	this->cmExecutionwaittime = chrono::microseconds(1000000);
 	this->cmStopped.store(false);
+	this->rmMongoDriverRemoteConnectionType = "";
+	this->rmMongoDriverRemoteConnectionHost = "";
+	this->rmMongoDriverRemoteConnectionPort = 0;
 }
-TcAgentManager::TcAgentManager(string managerid, string managername, chrono::microseconds schedulewaittime, chrono::microseconds executionwaittime)
+TcAgentManager::TcAgentManager(int pNumOfAgents, bool pLocalFileConfigEnable, bool pLocalConfigEnable, string pLocalConfigFile, string pDatabase, string pConfigurationCollection, string pMongoDriverRemoteConnectionType, string pMongoDriverRemoteConnectionHost, uint16_t pMongoDriverRemoteConnectionPort, string pManagerid, string pManagername, chrono::microseconds pSchedulewaittime, chrono::microseconds pExecutionwaittime)
 {
-	this->rmManagerid = managerid;
-	this->rmManagername = managername;
+	this->rmManagerid = pManagerid;
+	this->rmManagername = pManagername;
 	this->cmAgents = new list<IAgent*>();
 	this->cmAgentshistory = new map<IAgent*, boost::circular_buffer<TcAgentStatus*>*>();
-	this->cmScheduleminwaittime = schedulewaittime;
+	this->cmScheduleminwaittime = pSchedulewaittime;
+	this->cmExecutionwaittime = pExecutionwaittime;
 	this->cmStopped.store(false);
+	this->rmConfigurationFile = pLocalConfigFile;
+	this->rmConfigurationCollection = pConfigurationCollection;
+	this->rmDatabase = pDatabase;
+	this->rmMongoDriverRemoteConnectionType = pMongoDriverRemoteConnectionType;
+	this->rmMongoDriverRemoteConnectionHost = pMongoDriverRemoteConnectionHost;
+	this->rmMongoDriverRemoteConnectionPort = pMongoDriverRemoteConnectionPort;
+	
+	if (pLocalConfigEnable)
+	{	
+		this->rmNumOfAgents = pNumOfAgents;
+	}
+	else if (pLocalFileConfigEnable)
+	{
+		// Get Last Agent Configuration
+		int rResult = 0;
+		if ((rResult = this->fGetNumOfAgentsFromFile(&(this->rmNumOfAgents))) < 0)
+		{
+			fprintf(stdout, ANSI_COLOR_RED "(%s) Get configuration data from file fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+			fflush(stdout);
+		}
+	}
+	else
+	{
+		IMongoDriverAgentInterface cMongoDriverInterface("Temp", pMongoDriverRemoteConnectionType, pMongoDriverRemoteConnectionHost, pMongoDriverRemoteConnectionPort);
+		// Get Last Agent Configuration
+		int rResult = 0;
+		if ((rResult = cMongoDriverInterface.fGetNumOfAgents(pDatabase, pConfigurationCollection, TcAgentManager::kDefaultConfigurationSortingAttribute, &(this->rmNumOfAgents))) < 0)
+		{
+			fprintf(stdout, ANSI_COLOR_RED "(%s) Get configuration data from database fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
+			fflush(stdout);
+		}
+	}
 }
 TcAgentManager::~TcAgentManager(){
 	
@@ -37,6 +80,52 @@ TcAgentManager::~TcAgentManager(){
 	if (this->cmAgentshistory != nullptr) {
 		this->cmAgentshistory->clear();
 		delete cmAgentshistory;
+	}
+}
+
+
+int TcAgentManager::fGetNumOfAgentsFromFile(int *pNumOfAgents)
+{
+
+	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
+	fflush(stdout);
+
+	try {
+
+		string rConfiguration_file = this->rmConfigurationFile;
+		int rNumOfAgents = 0;
+		int rResult = 0;
+		std::ifstream cConfiguration_file_is(rConfiguration_file);
+		string rConfiguration;
+		string rJsonString((std::istreambuf_iterator<char>(cConfiguration_file_is)),
+					std::istreambuf_iterator<char>());;
+		rJsonString.erase(remove(rJsonString.begin(), rJsonString.end(), '\t'), rJsonString.end());
+		rJsonString.erase(remove(rJsonString.begin(), rJsonString.end(), '\n'), rJsonString.end());
+
+		if(rJsonString != ""){
+			bsoncxx::document::value cConfiguration = bsoncxx::from_json(rJsonString);
+			auto cAgentConfiguration = cConfiguration.view()[TcAgentManager::kAgentsConfigurationsKey].get_document().value;  
+			for (bsoncxx::document::element el : cAgentConfiguration) {
+				rNumOfAgents++;
+			}
+			fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+			fflush(stdout);
+			*pNumOfAgents = rNumOfAgents;
+		} else{
+			fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+			fflush(stdout);
+			*pNumOfAgents = 0;
+		}
+		return (0);
+
+	}
+	catch (exception e) {
+		fprintf(stdout, "Catched exception - Message %s\n", e.what());
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		*pNumOfAgents = 0;
+		return (-1);
 	}
 }
 
@@ -61,6 +150,10 @@ void TcAgentManager::fSetId(string managerid)
 	this->rmManagerid = managerid;
 }
 
+int TcAgentManager::fGetNumOfAgents()
+{
+    return this->rmNumOfAgents;
+}
 string TcAgentManager::fGetId()
 {
 	return(this->rmManagerid);
@@ -105,67 +198,73 @@ chrono::microseconds TcAgentManager::fSchedule(priority_queue<IAgent*>* pReadyag
 	return(schedulewait);
 }
 void TcAgentManager::fRun(priority_queue<IAgent*>* pReadyagents) {
-
-	fprintf(stdout, "(%s) Starts Run\n", __func__);
-	fflush(stdout);
-
-	while (!pReadyagents->empty()) {
-
-		//chrono::time_point<chrono::high_resolution_clock> 
-		auto start = chrono::high_resolution_clock::now();
-		bool agentstatus = false;
-		optional<int> result = 0;
-		promise<optional<int>> p;
-		chrono::microseconds agentWait = chrono::microseconds(cmExecutionwaittime);
-
-		IAgent* agent = pReadyagents->top();
-
-
-		fprintf(stdout, "============================================================================================\n");
-		fprintf(stdout, "(%s) Agent with AgentId %s and AgentName %s is starting\n", __func__, agent->fGetId().c_str(), agent->fGetName().c_str());
+	try{
+		fprintf(stdout, "(%s) Starts Run\n", __func__);
 		fflush(stdout);
 
-		thread agentThread = thread(ref(*agent), ref(p));
-		agentThread.detach();
-		
-		future<optional<int>> f = p.get_future();
+		while (!pReadyagents->empty()) {
 
-		future_status status = f.wait_for(agentWait);
-		//chrono::time_point<chrono::high_resolution_clock> end = chrono::high_resolution_clock::now();
-		auto end = chrono::high_resolution_clock::now();
-		double elapsed_time = chrono::duration<double, std::milli>(end - start).count();
+			//chrono::time_point<chrono::high_resolution_clock> 
+			auto start = chrono::high_resolution_clock::now();
+			bool agentstatus = false;
+			optional<int> result = 0;
+			promise<optional<int>> p;
+			chrono::microseconds agentWait = chrono::microseconds(cmExecutionwaittime);
 
-		if (status == future_status::ready) {
-			result = f.get();
-			agentstatus = true;
-			//fprintf(stdout, "(%s) Ready - Agent ends its task normally in %d ms\n", __func__, (int) chrono::duration_cast<chrono::milliseconds>(end - start).count());
-			fprintf(stdout, "(%s) Ready - Agent ends its task normally in %f ms\n", __func__, (double) elapsed_time);
+			IAgent* agent = pReadyagents->top();
+
+
+			fprintf(stdout, "============================================================================================\n");
+			fprintf(stdout, "(%s) Agent with AgentId %s and AgentName %s is starting\n", __func__, agent->fGetId().c_str(), agent->fGetName().c_str());
 			fflush(stdout);
-		} else if (status == future_status::timeout) {
-			fprintf(stdout, "(%s) Timeout - Agent doesn't end its task normally in %d ms\n", __func__, (int) chrono::duration_cast<chrono::milliseconds>(end - start).count());
+
+			thread agentThread = thread(ref(*agent), ref(p));
+			agentThread.detach();
+			
+			future<optional<int>> f = p.get_future();
+
+			future_status status = f.wait_for(agentWait);
+			//chrono::time_point<chrono::high_resolution_clock> end = chrono::high_resolution_clock::now();
+			auto end = chrono::high_resolution_clock::now();
+			double elapsed_time = chrono::duration<double, std::milli>(end - start).count();
+
+			if (status == future_status::ready) {
+				result = f.get();
+				agentstatus = true;
+				//fprintf(stdout, "(%s) Ready - Agent ends its task normally in %d ms\n", __func__, (int) chrono::duration_cast<chrono::milliseconds>(end - start).count());
+				fprintf(stdout, "(%s) Ready - Agent ends its task normally in %f ms\n", __func__, (double) elapsed_time);
+				fflush(stdout);
+			} else if (status == future_status::timeout) {
+				fprintf(stdout, "(%s) Timeout - Agent doesn't end its task normally in %d ms\n", __func__, (int) chrono::duration_cast<chrono::milliseconds>(end - start).count());
+				fflush(stdout);
+				agentstatus = false;
+			}
+
+			if(this->cmAgentshistory->find(agent) == this->cmAgentshistory->end()) {
+				boost::circular_buffer<TcAgentStatus*>* agentStatusList = new boost::circular_buffer<TcAgentStatus*>();
+				agentStatusList->push_back(new TcAgentStatus(agentstatus, chrono::duration_cast<chrono::microseconds>(end - start), start));
+				this->cmAgentshistory->insert(make_pair(agent, agentStatusList));
+			} else {
+				this->cmAgentshistory->at(agent)->push_back(new TcAgentStatus(agentstatus, chrono::duration_cast<chrono::microseconds>(end - start), start));
+			}
+
+			pReadyagents->pop();
+			
+
+			fprintf(stdout, "(%s) Agent with AgentId %s and AgentName %s is ending\n", __func__, agent->fGetId().c_str(), agent->fGetName().c_str());
+			fprintf(stdout, "============================================================================================\n");
 			fflush(stdout);
-			agentstatus = false;
+							
 		}
-
-		if(this->cmAgentshistory->find(agent) == this->cmAgentshistory->end()) {
-			boost::circular_buffer<TcAgentStatus*>* agentStatusList = new boost::circular_buffer<TcAgentStatus*>();
-			agentStatusList->push_back(new TcAgentStatus(agentstatus, chrono::duration_cast<chrono::microseconds>(end - start), start));
-			this->cmAgentshistory->insert(make_pair(agent, agentStatusList));
-		} else {
-			this->cmAgentshistory->at(agent)->push_back(new TcAgentStatus(agentstatus, chrono::duration_cast<chrono::microseconds>(end - start), start));
-		}
-
-		pReadyagents->pop();
-		
-
-		fprintf(stdout, "(%s) Agent with AgentId %s and AgentName %s is ending\n", __func__, agent->fGetId().c_str(), agent->fGetName().c_str());
-		fprintf(stdout, "============================================================================================\n");
+		fprintf(stdout, "(%s) Ends Running\n", __func__);
 		fflush(stdout);
-						
+	} catch (exception e) {
+		printf("Catched exception - Message %s\n", e.what());
+		fflush(stdout);
+		fprintf(stdout, "(%s) Exit from %s \n", __func__, __func__);
+		fflush(stdout);
+		throw e;
 	}
-
-	fprintf(stdout, "(%s) Ends Running\n", __func__);
-	fflush(stdout);
 
 }
 void TcAgentManager::fExecute() {
@@ -180,3 +279,20 @@ void TcAgentManager::fAddAgent(IAgent* agent) {
 	this->cmAgents->push_back(agent);
     this->cmAgentshistory->insert(make_pair(agent, new boost::circular_buffer<TcAgentStatus*>(1024)));
 }
+
+
+const string TcAgentManager::kDefaultDatabase = "InfoDB";
+const bool TcAgentManager::kDefaultLocalConfigurationEnable = false;
+const bool TcAgentManager::kDefaultConfigurationFileEnable = true;
+const string TcAgentManager::kDefaultDatabaseConnectionType = "mongodb";
+const string TcAgentManager::kDefaultDatabaseConnectionHost = "127.0.0.1";
+const uint16_t TcAgentManager::kDefaultDatabaseConnectionPort = (uint16_t) 27017;
+const string TcAgentManager::kDefaultConfigurationCollection = "Configuration";
+const string TcAgentManager::kDefaultConfigurationSortingAttribute = "timestamp";
+const string TcAgentManager::kDefaultConfigurationFile = "./Configuration.json";
+const string TcAgentManager::kAgentsConfigurationsKey = "agents";
+
+const string TcAgentManager::kDefaultManagerId = "AM0";
+const string TcAgentManager::kDefaultManagerName = "Agent Manager";
+const uint64_t TcAgentManager::kDefaultManagerScheduleTime = (uint64_t) 1000;
+const uint64_t TcAgentManager::kDefaultManagerExecutionWaitTime = (uint64_t) 5000;

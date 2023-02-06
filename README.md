@@ -26,7 +26,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ## Description of the project
 
-This NDF project is a way to detect nolveties/changes on new datasets, given a model pretrained with 'normal' datasets. It is composed by two parts: AI Unit and Maintenance Control Unit.
+This NDF project is a way to detect nolveties/changes on new datasets, given a model pretrained on 'normal' datasets. It is composed by two parts: AI Unit and Maintenance Control Unit.
 
 ## Installation procedure
 

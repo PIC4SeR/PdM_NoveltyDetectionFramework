@@ -141,4 +141,4 @@ After the NDF is running, you can interact with NDFs AIU using keyboard commands
 
 ## Authors
 
-Marco Ambrosio, Brenno Tuberga
+Giuseppe Pedone, Umberto Albertin

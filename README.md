@@ -26,7 +26,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ## Description of the project
 
-The code in this repository provides useful tools to automatically generate models of row-based crops for Blender and Gazebo.
+This NDF project is a way to detect nolveties/changes on new datasets, given a model pretrained with 'normal' datasets. It is composed by two parts: AI Unit and Maintenance Control Unit.
 
 ## Installation procedure
 

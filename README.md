@@ -6,7 +6,7 @@
 
 ---
 
-# Automatic Row Crop Generator User Guide
+# Novelty Detection Framwork User Guide
 
 ## Licence 
 

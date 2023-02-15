@@ -1,6 +1,8 @@
 ﻿#include <string>
 #include <chrono>
 #include <thread>
+#include <mongocxx/uri.hpp>
+#include <mongocxx/instance.hpp>
 
 #include "../include/TcAgentSystem.h"
 #include "../include/Agent/ErrorDegradationTimeEstimatorAgent/TcErrorDegradationTimeEstimator.h"
@@ -91,12 +93,13 @@ void TcAgentSystem::fWaitManager(thread* pManagerThread) {
 int main()
 { 
 	string rMongoDBConnectionType = "mongodb";
-	string rMongoDBConnectionHost = "localhost";
+	string rMongoDBConnectionHost = "127.0.0.1";
 	uint16_t rMongoDBConnectionPort = 27017;
 
+
 	TcAgentSystem* system = new TcAgentSystem("S - 0", "System - 0");
-	system->fLoadManager(false, false, 
-						"./Configuration.json", 
+	system->fLoadManager(true, false, 
+						"Configuration.json", 
 						"InfoDB",
 						"Configuration",
 						rMongoDBConnectionType,
@@ -108,8 +111,8 @@ int main()
 
 	for (int i = 1; i <= system->fGetManager()->fGetNumOfAgents(); i++)
 	{
-		system->fLoadAgent(new TcErrorDegradationTimeEstimator(true, false, "Configuration.json", "InfoDB", "Configuration", rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort, string("AG") + to_string(i), 4, i, "MAE", 40, 5, 3000, 4, 
-			chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)),  string("TestResult"), string("Prediction"), string("MAE-Degradation-Time-Estimator") + to_string(i), chrono::microseconds(10000000), chrono::high_resolution_clock::now(), TcAgent::Priority::High, false));
+		system->fLoadAgent(new TcErrorDegradationTimeEstimator(true, false, "Configuration.json", "InfoDB", "Configuration", rMongoDBConnectionType, rMongoDBConnectionHost, rMongoDBConnectionPort, string("AG") + to_string(i-1), 4, i, "MAE", 40, 5, 3000, 4,
+			chrono::duration_cast<chrono::milliseconds>(chrono::hours(1)), string("TestResult"), string("Prediction"), string("Agent ") + to_string(i-1), chrono::microseconds(10000000), chrono::high_resolution_clock::now(), TcAgent::Priority::High, false));
 	}
 
 	try{

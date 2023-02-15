@@ -454,7 +454,7 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
 	fflush(stdout);
 
-	string cMongoDriverRemoteConnectionString = this->rmMongoDriverRemoteConnectionType + "://" + this->rmMongoDriverRemoteConnectionHost + ":" + to_string(this->rmMongoDriverRemoteConnectionPort) + "&heartbeat-frequency=3";
+	string cMongoDriverRemoteConnectionString = this->rmMongoDriverRemoteConnectionType + "://" + this->rmMongoDriverRemoteConnectionHost + ":" + to_string(this->rmMongoDriverRemoteConnectionPort);// +"&heartbeat-frequency=3";
 	const mongocxx::uri& cMongoDriverConnectionUri{ bsoncxx::string::view_or_value(cMongoDriverRemoteConnectionString) };
 
 	mongocxx::client cMongoClient = mongocxx::client(cMongoDriverConnectionUri);
@@ -583,6 +583,7 @@ int TcMongoDriver::fRunQuery(list<string>* pOutputList, string pDatabase, string
 	const mongocxx::uri& cMongoDriverConnectionUri{ bsoncxx::string::view_or_value(cMongoDriverRemoteConnectionString) };
 
 	mongocxx::client cMongoClient = mongocxx::client(cMongoDriverConnectionUri);
+
 	if (!cMongoClient) {
 		fprintf(stdout, ANSI_COLOR_RED "(%s) Mongo client invalid" ANSI_COLOR_RESET "\n", __func__);
 		fflush(stdout);

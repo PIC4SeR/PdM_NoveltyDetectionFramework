@@ -289,7 +289,7 @@ const string TcAgentManager::kDefaultDatabaseConnectionHost = "127.0.0.1";
 const uint16_t TcAgentManager::kDefaultDatabaseConnectionPort = (uint16_t) 27017;
 const string TcAgentManager::kDefaultConfigurationCollection = "Configuration";
 const string TcAgentManager::kDefaultConfigurationSortingAttribute = "timestamp";
-const string TcAgentManager::kDefaultConfigurationFile = "./Configuration.json";
+const string TcAgentManager::kDefaultConfigurationFile = "Configuration.json";
 const string TcAgentManager::kAgentsConfigurationsKey = "agents";
 
 const string TcAgentManager::kDefaultManagerId = "AM0";

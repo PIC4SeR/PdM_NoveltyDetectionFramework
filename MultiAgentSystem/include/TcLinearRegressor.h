@@ -52,11 +52,13 @@ class TcLinearRegressor {
 
         int n = pX.size();
         int len = n / 2;
+        auto prova = pX.begin();
+        auto prova2 = pX.begin() + len-1;
 
         vector<double> subX1(pX.begin(), pX.begin() + len);
-        vector<double> subX2(pX.begin() + len + 1, pX.end());
+        vector<double> subX2(pX.begin() + len , pX.end());
         vector<double> subTime1(pY.begin(), pY.begin() + len);
-        vector<double> subTime2(pY.begin() + len + 1, pY.end());
+        vector<double> subTime2(pY.begin() + len , pY.end());
 
         double mean1 = mean(subX1);
         double mean2 = mean(subX2);

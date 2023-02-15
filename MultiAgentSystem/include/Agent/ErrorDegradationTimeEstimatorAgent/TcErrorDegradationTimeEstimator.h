@@ -159,10 +159,10 @@ public:
 	virtual int fRun();
 	int fGetLastErrors(list<long long> *pTimes, list<double> *pErrors);
 	int fGetLastConfigurationFromDatabase();
-	int fGetLastConfigurationFromFile();
-	int fGetConfiguration();
-	void fMakePrediction(list<long long> pTimes, list<double> pErrors, long long *pPrediction, double *pMcoefficient, double* pQoffset, chrono::system_clock::time_point* pStartTrainTime, chrono::system_clock::time_point* pEndTrainTime, chrono::system_clock::time_point* pEndPredictionTime, chrono::system_clock::time_point* pPredictedTimeOfError, chrono::microseconds* pPredictedTimeToError);
-	int fNotifyPrediction(chrono::system_clock::time_point pAgentStartTime, long long pLastErrorTime, double pLastError, long long pPrediction, double pMcoefficient, double pQoffset, chrono::system_clock::time_point pStartTrainTime, chrono::system_clock::time_point pEndTrainTime, chrono::system_clock::time_point pEndPredictionTime, chrono::system_clock::time_point pPredictedTimeOfError, chrono::microseconds pPredictedTimeToError);
+	int fGetLastConfigurationFromFile(string AGid);
+	int fGetConfiguration(string AGid);
+	void fMakePrediction(list<long long> pTimes, list<double> pErrors, long long *pPrediction, double *pMcoefficient, double* pQoffset, chrono::system_clock::time_point* pStartTrainTime, chrono::system_clock::time_point* pEndTrainTime, chrono::system_clock::time_point* pEndPredictionTime, chrono::system_clock::time_point* pPredictedTimeOfError, chrono::milliseconds* pPredictedTimeToError);
+	int fNotifyPrediction(chrono::system_clock::time_point pAgentStartTime, long long pLastErrorTime, double pLastError, long long pPrediction, double pMcoefficient, double pQoffset, chrono::system_clock::time_point pStartTrainTime, chrono::system_clock::time_point pEndTrainTime, chrono::system_clock::time_point pEndPredictionTime, chrono::system_clock::time_point pPredictedTimeOfError, chrono::milliseconds pPredictedTimeToError);
 };
 
 

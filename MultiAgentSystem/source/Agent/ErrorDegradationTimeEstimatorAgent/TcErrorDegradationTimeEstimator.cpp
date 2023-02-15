@@ -41,7 +41,7 @@ TcErrorDegradationTimeEstimator::TcErrorDegradationTimeEstimator(bool pLocalFile
 		this->rmAgentID = pAgentID;
 		this->rmConfigurationCollection = pConfigurationCollection;
 		// Get Last Agent Configuration
-		if ((rResult = this->fGetConfiguration()) < 0)
+		if ((rResult = this->fGetConfiguration(this->rmAgentID)) < 0)
 		{
 			fprintf(stdout, ANSI_COLOR_RED "(%s) Get configuration data fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
 			fflush(stdout);
@@ -76,12 +76,12 @@ TcErrorDegradationTimeEstimator::TcErrorDegradationTimeEstimator(bool pLocalFile
 TcErrorDegradationTimeEstimator::~TcErrorDegradationTimeEstimator() { ; }
 
 
-int TcErrorDegradationTimeEstimator::fGetConfiguration(){
+int TcErrorDegradationTimeEstimator::fGetConfiguration(string AGid){
 	if (!this->rmLocalConfigEnable && this->rmLocalFileConfigEnable)
 		{
 			// Get Last Agent Configuration
 			int rResult = 0;
-			if ((rResult = this->fGetLastConfigurationFromFile()) < 0)
+			if ((rResult = this->fGetLastConfigurationFromFile(this->rmAgentID)) < 0)
 			{
 				fprintf(stdout, ANSI_COLOR_RED "(%s) Get configuration data from file fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
 				fflush(stdout);
@@ -117,7 +117,7 @@ int TcErrorDegradationTimeEstimator::fRun()
 		chrono::system_clock::time_point cEndTrainTime;
 		chrono::system_clock::time_point rEndPredictionTime;
 		chrono::system_clock::time_point rPredictedTimeOfError;
-		chrono::microseconds cPredictedTimeToError;
+		chrono::milliseconds cPredictedTimeToError;
 
 		chrono::system_clock::time_point cAgentStartTime = chrono::system_clock::now();
 
@@ -128,7 +128,7 @@ int TcErrorDegradationTimeEstimator::fRun()
 		fflush(stdout);
 
 		//Get Configuration for this Agent
-		if ((rResult = this->fGetConfiguration()) < 0)
+		if ((rResult = this->fGetConfiguration(this->rmAgentID)) < 0)
 		{
 			fprintf(stdout, ANSI_COLOR_RED "(%s) Get configuration data fails with error %d" ANSI_COLOR_RESET "\n", __func__, rResult);
 			fflush(stdout);
@@ -150,8 +150,9 @@ int TcErrorDegradationTimeEstimator::fRun()
 
 		fprintf(stdout, "(%s) Verify samples read\n", __func__);
 		fflush(stdout);
+			
 
-		if (rTimes.size() <= 0 || rTimes.size() > 0 && rTimes.front() * 10000 <= this->rmLastSampleTime.time_since_epoch().count())
+		if (rTimes.size() <= 0 || rTimes.size() > 0 && rTimes.front() * 10 <= this->rmLastSampleTime.time_since_epoch().count())
 		{
 			fprintf(stdout, ANSI_COLOR_YELLOW "(%s) No data from database available" ANSI_COLOR_RESET "\n", __func__);
 			fflush(stdout);
@@ -289,7 +290,7 @@ int TcErrorDegradationTimeEstimator::fGetLastConfigurationFromDatabase()
 	return (kGetDataSuccess);
 }
 
-int TcErrorDegradationTimeEstimator::fGetLastConfigurationFromFile()
+int TcErrorDegradationTimeEstimator::fGetLastConfigurationFromFile(string AGid)
 {
 
 	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
@@ -308,7 +309,7 @@ int TcErrorDegradationTimeEstimator::fGetLastConfigurationFromFile()
 	this->rmTestResultCollection = string(cConfiguration.view()[TcErrorDegradationTimeEstimator::kTestResultCollection].get_utf8().value.to_string());
 	this->rmConfigurationCollection = string(cConfiguration.view()[TcErrorDegradationTimeEstimator::kConfigurationCollection].get_utf8().value.to_string());
 
-	auto cAgentConfiguration = cConfiguration.view()[TcErrorDegradationTimeEstimator::kConfigurationAgents][this->rmAgentID];
+	auto cAgentConfiguration = cConfiguration.view()[TcErrorDegradationTimeEstimator::kConfigurationAgents][AGid];// [this->rmAgentID] ;
 
 	if (cAgentConfiguration)
 	{
@@ -344,7 +345,7 @@ int TcErrorDegradationTimeEstimator::fGetLastConfigurationFromFile()
 	return (kGetDataSuccess);
 }
 
-void TcErrorDegradationTimeEstimator::fMakePrediction(list<long long> pTimes, list<double> pErrors, long long *pPrediction, double *pMcoefficient, double *pQoffset, chrono::system_clock::time_point *pStartTrainTime, chrono::system_clock::time_point *pEndTrainTime, chrono::system_clock::time_point *pEndPredictionTime, chrono::system_clock::time_point *pPredictedTimeOfError, chrono::microseconds *pPredictedTimeToError)
+void TcErrorDegradationTimeEstimator::fMakePrediction(list<long long> pTimes, list<double> pErrors, long long *pPrediction, double *pMcoefficient, double *pQoffset, chrono::system_clock::time_point *pStartTrainTime, chrono::system_clock::time_point *pEndTrainTime, chrono::system_clock::time_point *pEndPredictionTime, chrono::system_clock::time_point *pPredictedTimeOfError, chrono::milliseconds*pPredictedTimeToError)
 {
 	TcLinearRegressor<double, long long> lr;
 	double rError = this->rmPredictedErrorValue;
@@ -358,8 +359,8 @@ void TcErrorDegradationTimeEstimator::fMakePrediction(list<long long> pTimes, li
 	chrono::system_clock::time_point cEndTrainTime = chrono::system_clock::now();
 	lr.fPredict(rError, &rPrediction);
 
-	chrono::system_clock::time_point cPredictedTimeOfError = chrono::time_point<chrono::system_clock, chrono::microseconds>(chrono::microseconds(rPrediction));
-	chrono::microseconds cPredictedTimeToError = chrono::duration_cast<chrono::hours>(cPredictedTimeOfError - chrono::system_clock::now());
+	chrono::system_clock::time_point cPredictedTimeOfError = chrono::time_point<chrono::system_clock, chrono::milliseconds>(chrono::milliseconds(rPrediction));
+	chrono::milliseconds cPredictedTimeToError = chrono::duration_cast<chrono::hours>(cPredictedTimeOfError - chrono::system_clock::now());
 	chrono::system_clock::time_point cEndPredictTime = chrono::system_clock::now();
 
 	*pPrediction = rPrediction;
@@ -374,7 +375,7 @@ void TcErrorDegradationTimeEstimator::fMakePrediction(list<long long> pTimes, li
 	return;
 }
 
-int TcErrorDegradationTimeEstimator::fNotifyPrediction(chrono::system_clock::time_point pAgentStartTime, long long pLastErrorTime, double pLastError, long long pPrediction, double pMcoefficient, double pQoffset, chrono::system_clock::time_point pStartTrainTime, chrono::system_clock::time_point pEndTrainTime, chrono::system_clock::time_point pEndPredictionTime, chrono::system_clock::time_point pPredictedTimeOfError, chrono::microseconds pPredictedTimeToError)
+int TcErrorDegradationTimeEstimator::fNotifyPrediction(chrono::system_clock::time_point pAgentStartTime, long long pLastErrorTime, double pLastError, long long pPrediction, double pMcoefficient, double pQoffset, chrono::system_clock::time_point pStartTrainTime, chrono::system_clock::time_point pEndTrainTime, chrono::system_clock::time_point pEndPredictionTime, chrono::system_clock::time_point pPredictedTimeOfError, chrono::milliseconds pPredictedTimeToError)
 {
 
 	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
@@ -447,7 +448,7 @@ const string TcErrorDegradationTimeEstimator::kDefaultTestResultCollection = "Te
 const string TcErrorDegradationTimeEstimator::kDefaultPredictionResultCollection = "Prediction";
 
 const string TcErrorDegradationTimeEstimator::kDefaultConfigurationSortingAttribute = "timestamp";
-const string TcErrorDegradationTimeEstimator::kDefaultConfigurationFile = "../../Configuration.json";
+const string TcErrorDegradationTimeEstimator::kDefaultConfigurationFile = "Configuration.json";
 const string TcErrorDegradationTimeEstimator::kAgentsConfigurationsKey = "agents";
 
 const string TcErrorDegradationTimeEstimator::kDefaultAgentId = "AG0";
@@ -456,7 +457,7 @@ const uint64_t TcErrorDegradationTimeEstimator::kDefaultStepRunTime = (uint64_t)
 const uint64_t TcErrorDegradationTimeEstimator::kDefaultPreventionThresholdTime = (uint64_t) 5000;
 const int TcErrorDegradationTimeEstimator::kDefaultNumSamplesRead = 10;
 const unsigned int TcErrorDegradationTimeEstimator::kDefaultPredictor = 0;
-const string TcErrorDegradationTimeEstimator::kDefaultPredictedErrorType = "MSE";
+const string TcErrorDegradationTimeEstimator::kDefaultPredictedErrorType = "MAE";
 const double TcErrorDegradationTimeEstimator::kDefaultPredictedErrorValue = 100;
 const double TcErrorDegradationTimeEstimator::kDefaultMinOperativeThresholdError = 10;
 const double TcErrorDegradationTimeEstimator::kDefaultMaxOperativeThresholdError = 80;

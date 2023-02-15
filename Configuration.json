@@ -43,7 +43,7 @@
                     },
                 "AG1":{
                         "num_samples_read": 4,
-                        "predictor": 2,
+                        "predictor": 10,
                         "predicted_error_type": "MAE",
                         "predicted_error_value" : 40.0,
                         "min_operative_threshold_error" : 5.0,
@@ -56,8 +56,8 @@
                         "mongo_driver_remote_connection_type": "mongodb",
                         "mongodriver_remote_connection_host": "127.0.0.1",
                         "mongo_driver_remote_connection_port": 27017,
-                        "agent_id": "AG0",
-                        "agent_name": "Agent 0",
+                        "agent_id": "AG1",
+                        "agent_name": "Agent 1",
                         "step_run_time": 10,
                         "priority": 4,
                         "stopped": false

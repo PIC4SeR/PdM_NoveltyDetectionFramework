@@ -108,7 +108,7 @@ int IMongoDriverAgentInterface::fGetLastErrors(list<double> *pErrors, list<long 
 
 int IMongoDriverAgentInterface::fInsertPrediction(string pDatabase, string pCollection, chrono::system_clock::time_point pAgentStartTime, long long pLastErrorTime, double pLastError, long long pPrediction, double pMcoefficient, double pQoffset, chrono::system_clock::time_point pStartTrainTime, chrono::system_clock::time_point pEndTrainTime, chrono::system_clock::time_point pEndPredictionTime, chrono::system_clock::time_point pPredictedTimeOfError, chrono::microseconds pPredictedTimeToError, int pPredictor){
 		bsoncxx::document::view_or_value cBsonDocument = bsoncxx::builder::stream::document{} 
-		<< TcErrorDegradationTimeEstimator::kActualErrorTime << bsoncxx::types::b_date{chrono::time_point<chrono::system_clock, chrono::microseconds>(chrono::microseconds(pLastErrorTime))}
+		<< TcErrorDegradationTimeEstimator::kActualErrorTime << bsoncxx::types::b_date{chrono::time_point<chrono::system_clock, chrono::milliseconds>(chrono::milliseconds(pLastErrorTime))}
 		<< TcErrorDegradationTimeEstimator::kAgentStartTime << bsoncxx::types::b_date{ pAgentStartTime }
 		<< TcErrorDegradationTimeEstimator::kTrainStartTime << bsoncxx::types::b_date{ pStartTrainTime }
 		<< TcErrorDegradationTimeEstimator::kTrainEndTime << bsoncxx::types::b_date{ pEndTrainTime }
@@ -141,7 +141,7 @@ int IMongoDriverAgentInterface::fGetLastConfiguration(string pDatabase, string p
     double rMinOperativeThresholdError = 0.00;
     double rMaxOperativeThresholdError = 0.00;
     int rMinNumOfRegrSamples = 0;
-    chrono::microseconds cPreventionThresholdTime;
+    chrono::milliseconds cPreventionThresholdTime;
     string rTestResultCollection = "";
     string rPredictionResultCollection = "";
     string rDatabaseName = "";
@@ -283,10 +283,13 @@ int IMongoDriverAgentInterface::fDatabaseExist(string pDatabase)
 	fprintf(stdout, "(%s) Enter in %s \n", __func__, __func__);
 	fflush(stdout);
 
-	string cMongoDriverRemoteConnectionString = this->cmMongoDriver->fGetMongoDriverConnectionType() + "://" + this->cmMongoDriver->fGetMongoDriverConnectionHost() + ":" + to_string(this->cmMongoDriver->fGetMongoDriverConnectionPort()) + "&heartbeat-frequency=3";
+
+    string cMongoDriverRemoteConnectionString = this->cmMongoDriver->fGetMongoDriverConnectionType() + "://" + this->cmMongoDriver->fGetMongoDriverConnectionHost() + ":" + to_string(this->cmMongoDriver->fGetMongoDriverConnectionPort());// +"&heartbeat-frequency=3";
 	const mongocxx::uri& cMongoDriverConnectionUri{ bsoncxx::string::view_or_value(cMongoDriverRemoteConnectionString) };
 
 	mongocxx::client cMongoClient = mongocxx::client(cMongoDriverConnectionUri);
+    
+
 	if (!cMongoClient) {
 		fprintf(stdout, ANSI_COLOR_RED "(%s) Mongo client invalid" ANSI_COLOR_RESET "\n", __func__);
 		fflush(stdout);

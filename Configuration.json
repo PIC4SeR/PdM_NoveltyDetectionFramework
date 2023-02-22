@@ -61,6 +61,28 @@
                         "step_run_time": 10,
                         "priority": 4,
                         "stopped": false
-                    }               
+                    },
+                    "AG2":{
+                        "num_samples_read": 4,
+                        "predictor": 5,
+                        "predicted_error_type": "MAE",
+                        "predicted_error_value" : 40.0,
+                        "min_operative_threshold_error" : 5.0,
+                        "max_operative_threshold_error": 3000.0,
+                        "min_num_of_regr_samples": 4,
+                        "prevention_threshold_time": 10,
+                        "test_result_collection": "TestResult",
+                        "prediction_result_collection": "Prediction",
+                        "database_name": "InfoDB",
+                        "mongo_driver_remote_connection_type": "mongodb",
+                        "mongodriver_remote_connection_host": "127.0.0.1",
+                        "mongo_driver_remote_connection_port": 27017,
+                        "agent_id": "AG2",
+                        "agent_name": "Agent 2",
+                        "step_run_time": 10,
+                        "priority": 4,
+                        "stopped": false
+                    }           
+                       
             }
 }

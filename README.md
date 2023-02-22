@@ -137,7 +137,7 @@ After the NDF is running, you can interact with NDFs AIU using keyboard commands
 	- 'Q' on the Plot Shell to close the Plot Shell.
   
 ```
-
+Restart the Demo if a Configuration file variation is performed.
 
 ## Authors
 
